@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="Windows-1252" ?>
+<NotepadPlus>
+    <Languages />
+    <LexerStyles />
+    <GlobalStyles>
+    </GlobalStyles>
+    <GUIConfigs>
+        <GUIConfig name="TestValue" readValue="readme" writeValue=""/>
+    </GUIConfigs>
+</NotepadPlus>
