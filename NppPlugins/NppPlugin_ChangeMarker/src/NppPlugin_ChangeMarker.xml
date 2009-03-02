@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="Windows-1252" ?>
+<NotepadPlus>
+    <Languages />
+    <LexerStyles />
+    <GlobalStyles>
+        <WidgetStyle name="Changes: Saved" styleID="0" fgColor="000000" bgColor="FFFFFF" />
+        <WidgetStyle name="Changes: Not Saved" styleID="0" fgColor="000000" bgColor="FFFFFF" />
+    </GlobalStyles>
+    <GUIConfigs>
+        <GUIConfig name="MAIN_VIEW" pluginMargin="show" />
+        <GUIConfig name="SUB_VIEW" pluginMargin="show" />
+        <GUIConfig name="SciMarkers" trackUNDOREDO="true" active="true" display="false" margin="MARGIN_PLUGIN" />
+        <GUIConfig name="CM_SAVED" markType="SC_MARK_LEFTRECT" xpm="cm_saved" displayMark="true" />
+        <GUIConfig name="CM_NOTSAVED" markType="SC_MARK_LEFTRECT" xpm="cm_notsaved" displayMark="true" />
+        
+    </GUIConfigs>
+</NotepadPlus>
