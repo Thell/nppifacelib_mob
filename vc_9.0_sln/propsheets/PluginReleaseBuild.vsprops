@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="PluginReleaseBuild"
+	InheritedPropertySheets="$(SolutionDir)propsheets\PluginCommonProps.vsprops"
+	>
+	<Tool
+		Name="VCLinkerTool"
+		AdditionalLibraryDirectories="$(SciIntDir)"
+	/>
+	<UserMacro
+		Name="SciIntDir"
+		Value="$(SolutionDir)..\scintilla\vcbuild\Release\"
+		InheritsFromParent="true"
+		Delimiter="\"
+		PerformEnvironmentSet="true"
+	/>
+</VisualStudioPropertySheet>

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="GlobalProps"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		AdditionalIncludeDirectories=""
+	/>
+	<Tool
+		Name="VCLibrarianTool"
+		AdditionalLibraryDirectories=""
+	/>
+	<UserMacro
+		Name="NppBinDir"
+		Value="$(SolutionDir)..\powereditor\bin\"
+		PerformEnvironmentSet="true"
+	/>
+	<UserMacro
+		Name="NppIntDir"
+		Value="$(SolutionDir)..\powereditor\visual.net\$(ConfigurationName)\"
+		PerformEnvironmentSet="true"
+	/>
+	<UserMacro
+		Name="SciDbgIntDir"
+		Value="$(SolutionDir)..\scintilla\vcbuild\Debug\"
+		PerformEnvironmentSet="true"
+	/>
+	<UserMacro
+		Name="SciRelIntDir"
+		Value="$(SolutionDir)..\scintilla\Release\"
+		PerformEnvironmentSet="true"
+	/>
+	<UserMacro
+		Name="NppSrcDir"
+		Value="$(SolutionDir)..\powereditor\src\"
+		PerformEnvironmentSet="true"
+	/>
+	<UserMacro
+		Name="PIfaceIncludes"
+		Value="$(SolutionDir)..\NppPluginIface\src\"
+		PerformEnvironmentSet="true"
+	/>
+	<UserMacro
+		Name="NppIncludes"
+		Value="$(NppSrcDir)MISC\; $(NppSrcDir)MISC\PluginsManager\; $(NppSrcDir)TinyXml\;$(NppSrcDir)TinyXML\tinyXmlA; $(NppSrcDir)MISC\Common\"
+		PerformEnvironmentSet="true"
+	/>
+	<UserMacro
+		Name="SciIncludes"
+		Value="$(SolutionDir)..\scintilla\src\;$(SolutionDir)..\scintilla\include\"
+		PerformEnvironmentSet="true"
+	/>
+</VisualStudioPropertySheet>

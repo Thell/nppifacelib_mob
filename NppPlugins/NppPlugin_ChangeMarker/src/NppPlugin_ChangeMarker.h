@@ -57,7 +57,7 @@ public:
 
 //  Change Marker Functions
 void initPlugin();
-void initMarker(int markerNumber);
+void initMarker(int* markerArray );
 void modificationHandler(SCNotification *scn);
 void fileSaveHandler(SCNotification *scn);
 void wordStylesUpdatedHandler();

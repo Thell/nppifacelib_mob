@@ -41,6 +41,8 @@ namespace {
 
 //  <--- Npp Data --->
 tstring _Name;					//  Name passed to NPP for use in the 'Plugins' menu.
+tstring _ModuleName;			//	Module name with the .dll extension.
+tstring _ModuleBaseName;		//  Moudle name without the .dll extension.
 HANDLE _hModule;				//  Notepad++'s handle for this plugin module.
 HWND _hNpp;						//  Handle to Notepad++ for messaging.
 HWND _hScintillaMain;			//  Handle to Notepad++'s main view for messaging.
@@ -97,6 +99,14 @@ void initPlugin(tstring name, HANDLE hModule)
 	_ASSERT( _Name.size() <= nbChar );	//  Ensure this plugin stays within name size limits.
 							
 	_Name.assign(name);
+
+	TCHAR tmpName[MAX_PATH];
+	::GetModuleFileName( (HMODULE)hModule, tmpName, MAX_PATH );
+	PathStripPath( tmpName );
+	_ModuleName.assign( tmpName );
+	PathRemoveExtension( tmpName );
+	_ModuleBaseName.assign( tmpName );
+
 	_hModule = hModule;
 }
 
@@ -136,19 +146,23 @@ void setPluginFuncItem(tstring Name, PFUNCPLUGINCMD pFunction,
 HANDLE hModule() { return _hModule; }
 
 //  Returns this module's full name.
-tstring getModuleName()
+tstring* getModuleName()
 {
+	/*
 	TCHAR moduleName[MAX_PATH];
 
 	::GetModuleFileName( (HMODULE)hModule(), moduleName, MAX_PATH);
 	PathStripPath(moduleName);
 
 	return moduleName;
+	*/
+	return &_ModuleName;
 }
 
 //  Returns this module's name without the .dll extension.
-tstring getModuleBaseName()
+tstring* getModuleBaseName()
 {
+	/*
 	TCHAR baseName[MAX_PATH];
 
 	::GetModuleFileName( (HMODULE)hModule(), baseName, MAX_PATH);
@@ -156,6 +170,8 @@ tstring getModuleBaseName()
 	PathRemoveExtension(baseName);
 
 	return baseName;
+	*/
+	return &_ModuleBaseName;
 }
 
 //  Returns the main Notepad++ handle.

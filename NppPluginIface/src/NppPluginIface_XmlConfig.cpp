@@ -82,7 +82,7 @@ bool initXmlPluginConfig()
 	bool retVal = false;
 	if ( _pXmlPluginConfigDoc ) return true;
 
-	tstring baseModuleName = npp_plugin::getModuleBaseName();
+	tstring baseModuleName = npp_plugin::getModuleBaseName()->c_str();
 
 	//  First try the application data folder.
 	TCHAR xmlPath[MAX_PATH];
@@ -102,7 +102,7 @@ bool initXmlPluginConfig()
 		{
 			tstring msgText;
 			msgText.assign( TEXT("The configuration file ") );
-			msgText.append( npp_plugin::getModuleBaseName() );
+			msgText.append( baseModuleName );
 			msgText.append( TEXT(".xml for the '") );
 			msgText.append( npp_plugin::getName() );
 			msgText.append( TEXT("' plugin was not found!") );

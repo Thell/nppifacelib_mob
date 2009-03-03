@@ -32,12 +32,13 @@ namespace npp_plugin {
 //  Namespace extension for plugin symbol marker management.
 namespace markers {
 
-int _mvMarkCheck[NB_MAX_PLUGINMARKERS] = { -1 };  // -1 = hasn't been checked, 0 = not avail, 1 = avail
-int _svMarkCheck[NB_MAX_PLUGINMARKERS] = { -1 };
-int _availMarkResult[NB_MAX_PLUGINMARKERS] = { -1 };
-int _markersNeeded = 0;
-int _markersFound = 0;
+//int _mvMarkCheck[NB_MAX_PLUGINMARKERS];
+//int _svMarkCheck[NB_MAX_PLUGINMARKERS];
+int _availMarkResult[NB_MAX_PLUGINMARKERS];
+//int _markersNeeded = 0;
+//int _markersFound = 0;
 
+#if(0)
 //  Sends out messages to SciMarkerSymbol to retrieve available marker ids.
 void _getNextMarkerType()
 {
@@ -49,23 +50,26 @@ void _getNextMarkerType()
 
 	msg::info_MARKERSYMBOL* _info = new msg::info_MARKERSYMBOL( currMarker, targetView );
 
-	CommunicationInfo* comm = new CommunicationInfo;
-	comm->internalMsg = msg::NPPP_MSG_MARKERSYMBOL;
-	comm->srcModuleName = getModuleName().c_str();
-	comm->info = _info;
+	CommunicationInfo comm;
+	comm.internalMsg = msg::NPPP_MSG_MARKERSYMBOL;
+	comm.srcModuleName = getModuleName()->c_str();
+	comm.info = _info;
 
-	bool msgSent = ::SendMessage( hNpp(), NPPM_MSGTOPLUGIN, (WPARAM)TEXT("SciMarkerSymbol.dll"), (LPARAM)comm);
+	bool msgSent = ::SendMessage( hNpp(), NPPM_MSGTOPLUGIN,
+		(WPARAM)TEXT("NppPlugin_SciMarkerSymbol.dll"), (LPARAM)&comm);
 
 	if ( msgSent ) {
+		npp_plugin::markers::_gotMarkerTypeReply();
 		msgTryCount = 0;
 		if ( targetView == SUB_VIEW ) currMarker++;
 		targetView = ( targetView == MAIN_VIEW ) ? ( SUB_VIEW ) : ( MAIN_VIEW );
+		_getNextMarkerType();
 	}
 	else {
 		msgTryCount++;
 		if ( msgTryCount > 100 ) {
 			tstring errMsg = TEXT("A communication error has occurred between this plugin (");
-			errMsg.append( getModuleBaseName() );
+			errMsg.append( getModuleBaseName()->c_str() );
 			errMsg.append( TEXT(") and SciMarkerSymbol while configuring markers.\r\n") );
 			errMsg.append( TEXT("This could be due to plugin load order, would you like to try again?") );
 
@@ -76,13 +80,18 @@ void _getNextMarkerType()
 				msgTryCount = 0;
 				_getNextMarkerType();
 			}
+			else {
+				//  Unload?
+			}
 		}
 		else {
 			_getNextMarkerType();
 		}
 	}		
 }
+#endif
 
+#if(0)
 //  Processes the reply message from SciMarkerSymbol.
 void _gotMarkerTypeReply( int markerNumber, int markerType, int targetView )
 {
@@ -111,14 +120,57 @@ void _gotMarkerTypeReply( int markerNumber, int markerType, int targetView )
 		_getNextMarkerType();
 	}
 }
+#endif
 
 //  Iterates through markers looking for available ones until the number of markers needed or
-//  NB_MAX_PLUGINMARKERS is reached.  Then sends a NPPP_RMSG_MARKERSAVAIL message to the
-//  plugins beNotified message handler.
-void getAvailableMarkers( int nb_markers_needed )
+//  NB_MAX_PLUGINMARKERS is reached.
+//  Returns array with values: -1 = hasn't been checked, 0 = not avail, 1 = avail
+int * getAvailableMarkers( int nb_markers_needed )
 {
-	_markersNeeded = nb_markers_needed;
-	_getNextMarkerType();
+	namespace msg = npp_plugin::messages;
+
+	_availMarkResult[NB_MAX_PLUGINMARKERS];
+	for (int i = 0; i< NB_MAX_PLUGINMARKERS; i++) _availMarkResult[i] = -1;
+
+	if ( nb_markers_needed > NB_MAX_PLUGINMARKERS ) return _availMarkResult;
+
+	CommunicationInfo comm;
+	comm.internalMsg = msg::NPPP_MSG_MARKERSYMBOL;
+	comm.srcModuleName = getModuleName()->c_str();
+	msg::info_MARKERSYMBOL _info(NULL, NULL);
+
+	int mvSymbol;
+	int svSymbol;
+	int foundMarks = 0;
+	for ( int currMark = 0; currMark < NB_MAX_PLUGINMARKERS; currMark++ ) {
+		_info.markerNumber = currMark;
+
+		_info.targetView = MAIN_VIEW;
+		comm.info = &_info;
+		bool mvMsg = ::SendMessage( hNpp(), NPPM_MSGTOPLUGIN, 
+				(WPARAM)TEXT("NppPlugin_SciMarkerSymbol.dll"), (LPARAM)&comm );
+		if ( mvMsg ) mvSymbol = _info.markerSymbol;
+
+		_info.targetView = SUB_VIEW;
+		comm.info = &_info;
+		bool svMsg = ::SendMessage( hNpp(), NPPM_MSGTOPLUGIN, 
+				(WPARAM)TEXT("NppPlugin_SciMarkerSymbol.dll"), (LPARAM)&comm );
+		if ( svMsg ) svSymbol = _info.markerSymbol;
+
+		if ( mvMsg && svMsg ) {
+			if ( ( mvSymbol == SC_MARK_AVAILABLE ) && ( svSymbol == SC_MARK_AVAILABLE ) ) {
+				_availMarkResult[currMark] = 1;
+				foundMarks++;
+			}
+			else {
+				_availMarkResult[currMark] = 0;
+			}
+		}
+
+		if ( foundMarks == nb_markers_needed ) break;
+	}
+
+	return ( _availMarkResult );
 }
 
 //  Converts a string representation of an Scintilla mark into the numeric value.

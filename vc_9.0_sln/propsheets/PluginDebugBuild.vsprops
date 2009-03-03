@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="PluginDebugBuild"
+	InheritedPropertySheets="$(SolutionDir)propsheets\PluginCommonProps.vsprops"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		RuntimeLibrary="1"
+	/>
+	<Tool
+		Name="VCLinkerTool"
+		AdditionalLibraryDirectories="$(SciIntDir)"
+	/>
+	<UserMacro
+		Name="SciIntDir"
+		Value="$(SolutionDir)..\scintilla\vcbuild\Debug\"
+		InheritsFromParent="true"
+		Delimiter="\"
+		PerformEnvironmentSet="true"
+	/>
+</VisualStudioPropertySheet>

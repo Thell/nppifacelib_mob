@@ -92,6 +92,11 @@ public:
 
 	ScintillaViewParams* svp;
 	NppGUI* nppGUI;
+
+	Margin(){
+		svp = new ScintillaViewParams;
+		nppGUI = new NppGUI;
+	}
 };
 
 struct Plugin_Line_Marker {
@@ -169,7 +174,7 @@ public:
 	void CompletedRedoStep();
 };
 
-void getAvailableMarkers( int nb_markers_needed );
+int * getAvailableMarkers( int nb_markers_needed );
 void _getNextMarkerType();
 void _gotMarkerTypeReply(int markerNumber, int markerType, int targetView);
 

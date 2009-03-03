@@ -73,8 +73,8 @@ void hCurrViewNeedsUpdate();					//  Sets flag to update hCurrView.
 
 //  <--- Data Retrieval Functions --->
 HANDLE hModule();								//  Plugin module's handle.
-tstring getModuleName();						//  Returns the dll modules proper name.
-tstring getModuleBaseName();					//  Returns the dll modules proper name without the .dll extension.
+tstring* getModuleName();						//  Returns the dll modules proper name.
+tstring* getModuleBaseName();					//  Returns the dll modules proper name without the .dll extension.
 HWND hNpp();									//  Returns the main Notepad++ handle.
 HWND hViewByInt(int view);						//  Returns handle for the view by int.
 HWND hMainView();								//  Returns handle used in messaging the main view.

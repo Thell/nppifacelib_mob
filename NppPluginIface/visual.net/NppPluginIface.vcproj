@@ -21,7 +21,8 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
-			CharacterSet="1"
+			InheritedPropertySheets="..\..\vc_9.0_sln\propsheets\GlobalProps.vsprops"
+			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -41,12 +42,13 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
+				AdditionalIncludeDirectories="$(NppIncludes); $(SciIncludes)"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
+				RuntimeLibrary="1"
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
+				WarningLevel="2"
 				DebugInformationFormat="4"
 			/>
 			<Tool
@@ -60,6 +62,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalDependencies="$(NppIntDir)\tinystr $(NppIntDir)\tinyxml $(NppIntDir)\tinyxmlerror $(NppIntDir)\tinyxmlparser $(NppIntDir)\tinystrA $(NppIntDir)\tinyxmlA $(NppIntDir)\tinyxmlerrorA $(NppIntDir)\tinyxmlparserA"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -82,7 +85,8 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
-			CharacterSet="1"
+			InheritedPropertySheets="..\..\vc_9.0_sln\propsheets\GlobalProps.vsprops"
+			CharacterSet="2"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -104,11 +108,12 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
+				AdditionalIncludeDirectories="$(NppIncludes); $(SciIncludes)"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
-				RuntimeLibrary="2"
+				RuntimeLibrary="1"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
+				WarningLevel="2"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -122,6 +127,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalDependencies="$(NppIntDir)\tinystr $(NppIntDir)\tinyxml $(NppIntDir)\tinyxmlerror $(NppIntDir)\tinyxmlparser $(NppIntDir)\tinystrA $(NppIntDir)\tinyxmlA $(NppIntDir)\tinyxmlerrorA $(NppIntDir)\tinyxmlparserA"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -140,10 +146,11 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Debug Unicode|Win32"
+			Name="Debug_Unicode|Win32"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
+			InheritedPropertySheets="..\..\vc_9.0_sln\propsheets\GlobalProps.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -164,12 +171,13 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
+				AdditionalIncludeDirectories="$(NppIncludes); $(SciIncludes)"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
+				RuntimeLibrary="1"
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
+				WarningLevel="2"
 				DebugInformationFormat="4"
 			/>
 			<Tool
@@ -183,6 +191,8 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalDependencies="tinystr.obj tinyxml.obj tinyxmlerror.obj tinyxmlparser.obj tinystrA.obj tinyxmlA.obj tinyxmlerrorA.obj tinyxmlparserA.obj"
+				AdditionalLibraryDirectories="&quot;$(NppIntDir)&quot;"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -201,10 +211,11 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release Unicode|Win32"
+			Name="Release_Unicode|Win32"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
+			InheritedPropertySheets="..\..\vc_9.0_sln\propsheets\GlobalProps.vsprops"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
@@ -227,11 +238,12 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
+				AdditionalIncludeDirectories="$(NppIncludes); $(SciIncludes)"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
-				RuntimeLibrary="2"
+				RuntimeLibrary="1"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
+				WarningLevel="2"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -245,6 +257,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalDependencies="$(NppIntDir)\tinystr $(NppIntDir)\tinyxml $(NppIntDir)\tinyxmlerror $(NppIntDir)\tinyxmlparser $(NppIntDir)\tinystrA $(NppIntDir)\tinyxmlA $(NppIntDir)\tinyxmlerrorA $(NppIntDir)\tinyxmlparserA"
 			/>
 			<Tool
 				Name="VCALinkTool"

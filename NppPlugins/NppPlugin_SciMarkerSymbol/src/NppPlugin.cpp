@@ -173,10 +173,10 @@ extern "C" __declspec(dllexport) LRESULT messageProc(UINT Message, WPARAM wParam
 				{
 					pmsg::info_MARKERSYMBOL* _info = reinterpret_cast<pmsg::info_MARKERSYMBOL *>(comm->info);
 					_info->markerSymbol = p_sms::MARKERSYMBOL( _info->markerNumber, _info->targetView );
-					tstring destModule = comm->srcModuleName;
-					comm->srcModuleName = npp_plugin::getModuleName().c_str();
-					comm->internalMsg = pmsg::NPPP_RMSG_MARKERSYMBOL;
-					SendMessage( hNpp(), NPPM_MSGTOPLUGIN, (WPARAM)destModule.c_str(), (LPARAM)comm );
+					//tstring destModule = comm->srcModuleName;
+					//comm->srcModuleName = npp_plugin::getModuleName().c_str();
+					//comm->internalMsg = pmsg::NPPP_RMSG_MARKERSYMBOL;
+					//SendMessage( hNpp(), NPPM_MSGTOPLUGIN, (WPARAM)destModule.c_str(), (LPARAM)comm );
 				break;
 				}
 

@@ -40,7 +40,7 @@ void initPlugin()
 	if ( xml::getGUIConfigValue( TEXT("SciMarkers"), TEXT("trackUNDOREDO") ) == TEXT("true") ) _track = true;
 
 	bool _active = false;
-	if ( xml::getGUIConfigValue( TEXT("SciMarkers"), TEXT("active") ) == TEXT("true") _active = true;
+	if ( xml::getGUIConfigValue( TEXT("SciMarkers"), TEXT("active") ) == TEXT("true") ) _active = true;
 
 	int _margin = mark::string2margin( xml::getGUIConfigValue( TEXT("SciMarkers"), TEXT("margin") ) );
 
@@ -51,59 +51,86 @@ void initPlugin()
 		( xml::getGUIConfigValue( TEXT("SUB_VIEW"), TEXT("pluginMargin") ) == TEXT("show") ) ? ( true ) : ( false );
 
 	//  Marker Specific Settings
-	for ( int i = 0; i < NB_CHANGEMARKERS; i++ {
+	for ( int i = 0; i < NB_CHANGEMARKERS; i++ ) {
+		Change_Mark* currCM = new Change_Mark;
+		//cm[i] = new Change_Mark;
 		//  ID Settings.
-		cm[i]->markName = ( i == CM_SAVED ) ? ( TEXT("CM_SAVED") ) : ( TEXT("CM_NOTSAVED") );
-		cm[i]->styleName = ( i == CM_SAVED ) ? ( TEXT("Changes: Saved") ) : ( TEXT("Changes: Not Saved") );
+		currCM->markName = ( i == CM_SAVED ) ? ( TEXT("CM_SAVED") ) : ( TEXT("CM_NOTSAVED") );
+		currCM->styleName = ( i == CM_SAVED ) ? ( TEXT("Changes: Saved") ) : ( TEXT("Changes: Not Saved") );
 
 		//  Style Settings.
-		cm[i]->fore = 
-			::_tcstol( (LPCTSTR)(xml::getGUIConfigValue( cm[i]->styleName, TEXT("fgColor") ).c_str() ), NULL, 16 );
-		cm[i]->back = 
-			::_tcstol( (LPCTSTR)(xml::getGUIConfigValue( cm[i]->styleName, TEXT("bgColor") ).c_str() ), NULL, 16 );
+		currCM->fore = 
+			::_tcstol( (LPCTSTR)(xml::getGUIConfigValue( currCM->styleName, TEXT("fgColor") ).c_str() ), NULL, 16 );
+		currCM->back = 
+			::_tcstol( (LPCTSTR)(xml::getGUIConfigValue( currCM->styleName, TEXT("bgColor") ).c_str() ), NULL, 16 );
 
 		//  Marker View Settings
-		cm[i]->active = _active;
-		cm[i]->display =
-			( xml::getGUIConfigValue( cm[i]->markName, TEXT("displayMark") ) == TEXT("true") ) ? ( true ) : ( false );
-		cm[i]->type = mark::string2marker( xml::getGUIConfigValue( cm[i]->markName, TEXT("markType") ) );
-		if ( cm[i]->type == SC_MARK_PIXMAP ) {
-			cm[i]->xpm.assign( xml::getGUIConfigValue( cm[i]->markName, TEXT("xpm") ) );
+		currCM->active = _active;
+		currCM->display =
+			( xml::getGUIConfigValue( currCM->markName, TEXT("displayMark") ) == TEXT("true") ) ? ( true ) : ( false );
+		currCM->type = mark::string2marker( xml::getGUIConfigValue( currCM->markName, TEXT("markType") ) );
+		if ( currCM->type == SC_MARK_PIXMAP ) {
+			currCM->xpm.assign( xml::getGUIConfigValue( currCM->markName, TEXT("xpm") ) );
 
 			// This should be in the marker extension.
-			if (! cm[i]->xpm.compare( cm[i]->xpm.length() - 4, 4, TEXT(".xpm") == 0 ) cm[i]->xpm.append( TEXT(".xpm") );
+			if (! currCM->xpm.compare( currCM->xpm.length() - 4, 4, TEXT(".xpm") ) == 0 ) currCM->xpm.append( TEXT(".xpm") );
 		}
 
 		//  Margin View Settings
-		cm[i]->margin.svp[MAIN_VIEW]._pluginMarginShow = _mvMarginShow;
-		cm[i]->margin.svp[SUB_VIEW]._pluginMarginShow = _svMarginShow;
+		currCM->margin.setTarget( MARGIN(_margin) );
+		currCM->margin.svp[MAIN_VIEW]._pluginMarginShow = _mvMarginShow;
+		currCM->margin.svp[SUB_VIEW]._pluginMarginShow = _svMarginShow;
+
+		cm[i] = currCM;
 	}
 
 	//  Now that all the config values are set...
 	if (! _track ) {
 		npp_plugin_changemarker::disable();
-	}
-	else {
-		//  Call for marker IDs to initialize.
-		mark::MARKERGETAVAIL( NB_CHANGEMARKERS );
+		return;
 	}
 
-}
+	bool retry = true;
+	while ( retry ) {
+		retry = false;
+		int* markResults = getAvailableMarkers( NB_CHANGEMARKERS );
+		
+		if ( ( markResults[0] == -1 ) && ( markResults[NB_MAX_PLUGINMARKERS - 1] == -1 ) ) {
 
-//  Initalizes the marker reserved for this plugin.
-void initMarker( int markerNumber[] )
-{
-	if ( markerNumber[0] = -1 ) {
-		//  no available markers where identified!
-		//  guess we use '0'? for them?
-	}
-	else {
-		for ( int i = 0, i < NB_MAX_PLUGINMARKERS; i++ ) {
-			if (! markerNumber[i] == 0 ) {
-				//  initialize this marker
+			tstring errMsg = TEXT("A communication error has occurred between this plugin (");
+			errMsg.append( getModuleBaseName()->c_str() );
+			errMsg.append( TEXT(") and SciMarkerSymbol while configuring markers.\r\n") );
+			errMsg.append( TEXT("This could be due to plugin load order or a missing plugin") );
+			errMsg.append( TEXT(" file, would you like to try again?") );
+
+			int msgboxReply =
+				::MessageBox( hNpp(), errMsg.c_str(), TEXT("Plugin Communication Error!"), MB_RETRYCANCEL| MB_ICONWARNING );
+
+			if ( msgboxReply == IDRETRY ) {
+				retry = true;
+			}
+			else {
+				npp_plugin_changemarker::disable();
+				break;
 			}
 		}
+		else {
+			initMarker( markResults );
+			break;
+		}
 	}
+}
+
+//  Initalizes the markers found for this plugin.
+void initMarker( int* markerArray )
+{
+	for ( int i = 0; i < NB_MAX_PLUGINMARKERS; i++ ) {
+		if ( markerArray[i] == 1 ) {
+			//  initialize this marker
+			bool stop = true;
+		}
+	}
+
 }
 
 //  Checks and updates marker styles when notified.
@@ -112,6 +139,11 @@ void wordStylesUpdatedHandler()
 	//  Check for style updates
 
 	//  Change styles if needed.
+}
+
+void modificationHandler ( SCNotification* scn )
+{
+	//  Process document modification messages
 }
 
 //  Alters the state of current Changes: Not Saved markers to Changes: Saved.

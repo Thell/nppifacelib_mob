@@ -21,7 +21,8 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			CharacterSet="1"
+			InheritedPropertySheets="..\..\..\vc_9.0_sln\propsheets\PluginDebugBuild.vsprops"
+			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -41,12 +42,13 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
+				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;NPPPLUGIN_TEMPLATE_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
+				RuntimeLibrary="1"
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
+				WarningLevel="2"
 				DebugInformationFormat="4"
 			/>
 			<Tool
@@ -61,6 +63,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkIncremental="2"
+				AdditionalLibraryDirectories=""
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"
@@ -92,7 +95,8 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			CharacterSet="1"
+			InheritedPropertySheets="..\..\..\vc_9.0_sln\propsheets\PluginReleaseBuild.vsprops"
+			CharacterSet="2"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -114,11 +118,12 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
+				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;NPPPLUGIN_TEMPLATE_EXPORTS"
-				RuntimeLibrary="2"
+				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
+				WarningLevel="2"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -133,6 +138,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories=""
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
@@ -162,10 +168,11 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Debug Unicode|Win32"
+			Name="Debug_Unicode|Win32"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
+			InheritedPropertySheets="..\..\..\vc_9.0_sln\propsheets\PluginDebugBuild.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -186,12 +193,12 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
+				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;NPPPLUGIN_TEMPLATE_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
+				WarningLevel="2"
 				DebugInformationFormat="4"
 			/>
 			<Tool
@@ -206,6 +213,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkIncremental="2"
+				AdditionalLibraryDirectories=""
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"
@@ -233,10 +241,11 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release Unicode|Win32"
+			Name="Release_Unicode|Win32"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
+			InheritedPropertySheets="..\..\..\vc_9.0_sln\propsheets\PluginReleaseBuild.vsprops"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
@@ -259,11 +268,12 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
+				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;NPPPLUGIN_TEMPLATE_EXPORTS"
-				RuntimeLibrary="2"
+				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
+				WarningLevel="2"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -278,6 +288,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories=""
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"

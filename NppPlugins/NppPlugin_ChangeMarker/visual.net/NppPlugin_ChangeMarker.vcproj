@@ -21,7 +21,8 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			CharacterSet="1"
+			InheritedPropertySheets="..\..\..\vc_9.0_sln\propsheets\PluginDebugBuild.vsprops"
+			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -44,9 +45,8 @@
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;NPPPLUGIN_CHANGEMARKER_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
+				WarningLevel="2"
 				DebugInformationFormat="4"
 			/>
 			<Tool
@@ -92,7 +92,8 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			CharacterSet="1"
+			InheritedPropertySheets="..\..\..\vc_9.0_sln\propsheets\PluginReleaseBuild.vsprops"
+			CharacterSet="2"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -115,10 +116,9 @@
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;NPPPLUGIN_CHANGEMARKER_EXPORTS"
-				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
+				WarningLevel="2"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -162,10 +162,11 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Debug Unicode|Win32"
+			Name="Debug_Unicode|Win32"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
+			InheritedPropertySheets="..\..\..\vc_9.0_sln\propsheets\PluginDebugBuild.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -189,9 +190,8 @@
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;NPPPLUGIN_CHANGEMARKER_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
+				WarningLevel="2"
 				DebugInformationFormat="4"
 			/>
 			<Tool
@@ -233,10 +233,11 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release Unicode|Win32"
+			Name="Release_Unicode|Win32"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
+			InheritedPropertySheets="..\..\..\vc_9.0_sln\propsheets\PluginReleaseBuild.vsprops"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
@@ -260,10 +261,9 @@
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;NPPPLUGIN_CHANGEMARKER_EXPORTS"
-				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
+				WarningLevel="2"
 				DebugInformationFormat="3"
 			/>
 			<Tool

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="PluginCommonProps"
+	InheritedPropertySheets="$(SolutionDir)propsheets\globalprops.vsprops"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		AdditionalIncludeDirectories="$(PIfaceIncludes);$(NppIncludes);$(SciIncludes)"
+	/>
+	<Tool
+		Name="VCLinkerTool"
+		AdditionalDependencies="NppPluginIface.lib"
+		OutputFile="$(PluginDir)$(ProjectName).dll"
+		AdditionalLibraryDirectories="$(SolutionDir)$(ConfigurationName)\;$(NppIntDir)"
+		ModuleDefinitionFile="$(PIfaceIncludes)NppPluginIface_ExtLexer.def"
+	/>
+	<Tool
+		Name="VCPostBuildEventTool"
+		CommandLine="IF NOT EXIST $(PluginConfigDir) MKDIR $(PluginConfigDir)&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)($TargetName).xml COPY $(ProjectDir)..\src\$(TargetName).xml $(PluginConfigDir)$(TargetName).xml&#x0D;&#x0A;"
+	/>
+	<UserMacro
+		Name="PluginDir"
+		Value="$(NppBinDir)plugins\"
+		InheritsFromParent="true"
+		Delimiter="\"
+		PerformEnvironmentSet="true"
+	/>
+	<UserMacro
+		Name="PluginConfigDir"
+		Value="$(NppBinDir)plugins\config\"
+		InheritsFromParent="true"
+		Delimiter="\"
+		PerformEnvironmentSet="true"
+	/>
+</VisualStudioPropertySheet>

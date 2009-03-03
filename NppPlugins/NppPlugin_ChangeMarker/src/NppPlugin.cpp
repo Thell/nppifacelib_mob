@@ -135,7 +135,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 		break;
 
 	case NPPN_TBMODIFICATION:
-		p_cm::init();
+		p_cm::initPlugin();
 		break;
 
 	case NPPN_WORDSTYLESUPDATED:
@@ -195,8 +195,8 @@ extern "C" __declspec(dllexport) LRESULT messageProc(UINT Message, WPARAM wParam
 
 				case msg::NPPP_RMSG_MARKERSYMBOL:
 				{
-					msg::info_MARKERSYMBOL* _info = reinterprest_cast<msg::info_MARKERSYMBOL *>( comm->info );
-					mark::_gotMarkerTypeReply( _info->markerNumber, _info->markerSymbol );
+					//msg::info_MARKERSYMBOL* _info = reinterpret_cast<msg::info_MARKERSYMBOL *>( comm->info );
+					//mark::_gotMarkerTypeReply( _info->markerNumber, _info->markerSymbol, _info->targetView );
 				break;
 				}
 
@@ -211,7 +211,8 @@ extern "C" __declspec(dllexport) LRESULT messageProc(UINT Message, WPARAM wParam
 		
 		//  <--- Internal Plugin Messages --->
 		case msg::NPPP_RMSG_MARKERGETAVAIL:
-			p_cm::initMarker( lParam );
+			p_cm::initMarker( (int*)lParam );
+			break;
 
 		default:
 			return false;
