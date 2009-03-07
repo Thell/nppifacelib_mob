@@ -132,6 +132,9 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 
 	case NPPN_READY:
 		npp_plugin::setNppReady();
+		npp_plugin::hCurrViewNeedsUpdate();
+		
+
 		break;
 
 	case NPPN_TBMODIFICATION:

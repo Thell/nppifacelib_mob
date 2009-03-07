@@ -21,8 +21,14 @@
  *
  */
 
+//  <--- STL --->
 #include <string>
 #include <map>
+#include <fstream>
+
+//  <--- Windows --->
+#include "Shlwapi.h"
+#pragma comment( lib, "Shlwapi.lib" )
 
 #include "NppPluginIface_Markers.h"
 #include "NppPluginIface_msgs.h"
@@ -32,97 +38,9 @@ namespace npp_plugin {
 //  Namespace extension for plugin symbol marker management.
 namespace markers {
 
-//int _mvMarkCheck[NB_MAX_PLUGINMARKERS];
-//int _svMarkCheck[NB_MAX_PLUGINMARKERS];
 int _availMarkResult[NB_MAX_PLUGINMARKERS];
-//int _markersNeeded = 0;
-//int _markersFound = 0;
 
-#if(0)
-//  Sends out messages to SciMarkerSymbol to retrieve available marker ids.
-void _getNextMarkerType()
-{
-	namespace msg = npp_plugin::messages;
-
-	static int currMarker = 0;
-	static int targetView = 0;
-	static int msgTryCount = 0;
-
-	msg::info_MARKERSYMBOL* _info = new msg::info_MARKERSYMBOL( currMarker, targetView );
-
-	CommunicationInfo comm;
-	comm.internalMsg = msg::NPPP_MSG_MARKERSYMBOL;
-	comm.srcModuleName = getModuleName()->c_str();
-	comm.info = _info;
-
-	bool msgSent = ::SendMessage( hNpp(), NPPM_MSGTOPLUGIN,
-		(WPARAM)TEXT("NppPlugin_SciMarkerSymbol.dll"), (LPARAM)&comm);
-
-	if ( msgSent ) {
-		npp_plugin::markers::_gotMarkerTypeReply();
-		msgTryCount = 0;
-		if ( targetView == SUB_VIEW ) currMarker++;
-		targetView = ( targetView == MAIN_VIEW ) ? ( SUB_VIEW ) : ( MAIN_VIEW );
-		_getNextMarkerType();
-	}
-	else {
-		msgTryCount++;
-		if ( msgTryCount > 100 ) {
-			tstring errMsg = TEXT("A communication error has occurred between this plugin (");
-			errMsg.append( getModuleBaseName()->c_str() );
-			errMsg.append( TEXT(") and SciMarkerSymbol while configuring markers.\r\n") );
-			errMsg.append( TEXT("This could be due to plugin load order, would you like to try again?") );
-
-			int msgboxReply =
-				::MessageBox( hNpp(), errMsg.c_str(), TEXT("Plugin Communication Error!"), MB_RETRYCANCEL| MB_ICONWARNING );
-
-			if ( msgboxReply == IDRETRY ) {
-				msgTryCount = 0;
-				_getNextMarkerType();
-			}
-			else {
-				//  Unload?
-			}
-		}
-		else {
-			_getNextMarkerType();
-		}
-	}		
-}
-#endif
-
-#if(0)
-//  Processes the reply message from SciMarkerSymbol.
-void _gotMarkerTypeReply( int markerNumber, int markerType, int targetView )
-{
-	namespace msg = npp_plugin::messages;
-
-	if ( targetView == MAIN_VIEW ) {
-		_mvMarkCheck[markerNumber] = ( markerType == SC_MARK_AVAILABLE ) ? ( 1 ) : ( 0 );
-	}
-	else {
-		_svMarkCheck[markerNumber] = ( markerType == SC_MARK_AVAILABLE ) ? ( 1 ) : ( 0 );
-
-		if ( ( markerType == SC_MARK_AVAILABLE ) && ( _mvMarkCheck[markerNumber] == 1 ) ) {
-			_markersFound++;
-		}
-	}
-
-	if ( _markersFound == _markersNeeded ) {
-		for ( int i = 0; i < NB_MAX_PLUGINMARKERS; i++ ) {
-			if ( _mvMarkCheck[i] >=0 && _svMarkCheck[i] >=0 ) {
-				_availMarkResult[i] = ( (_mvMarkCheck[i] == 1) && (_svMarkCheck[i] == 1) ) ? ( 1 ) : ( 0 );
-			}
-		}
-		::messageProc( msg::NPPP_RMSG_GETAVAILABLEMARKERS, 0, (LPARAM)&_availMarkResult );
-	}
-	else {
-		_getNextMarkerType();
-	}
-}
-#endif
-
-//  Iterates through markers looking for available ones until the number of markers needed or
+//  Iterate through markers looking for available ones until the number of markers needed or
 //  NB_MAX_PLUGINMARKERS is reached.
 //  Returns array with values: -1 = hasn't been checked, 0 = not avail, 1 = avail
 int * getAvailableMarkers( int nb_markers_needed )
@@ -245,26 +163,26 @@ int string2margin( tstring szMargin )
 
 //  Increases or decreases the margins width by 'width' amount.
 //  Returns false if the markers target margin is not supported.
-bool Margin::adjustWidth( int width )
+bool Margin::adjustWidth( int width, int view )
 {
 	if ( _target == MARGIN_NONE || _target == MARGIN_LINENUMBER ) return ( false );
 
 	//  Store the size information and set the new size information
-	_widthOrig = ::SendMessage( svp->_hView, SCI_GETMARGINWIDTHN, _target, 0);
+	_widthOrig = ::SendMessage( svp[view]->_hView, SCI_GETMARGINWIDTHN, _target, 0);
 	_widthSetByPlugin = _widthOrig + width;
 
-	::SendMessage( svp->_hView, SCI_SETMARGINWIDTHN, _target, _widthSetByPlugin );
+	::SendMessage( svp[view]->_hView, SCI_SETMARGINWIDTHN, _target, _widthSetByPlugin );
 
 	return ( true );
 }
 
 //  Restore the margin width to what it was when set.  If it has changed since being set
 //  remove the size this plugin added/removed.
-void Margin::restoreWidth()
+void Margin::restoreWidth( int view )
 {
 	if ( _target == MARGIN_NONE || _target == MARGIN_LINENUMBER ) return;
 
-	_widthCurrent = ::SendMessage( svp->_hView, SCI_GETMARGINWIDTHN, _target, 0 );
+	_widthCurrent = ::SendMessage( svp[view]->_hView, SCI_GETMARGINWIDTHN, _target, 0 );
 	
 	//  Some other plugin or N++ may have reset the size already.  In that case, don't
 	// change it again.
@@ -272,39 +190,24 @@ void Margin::restoreWidth()
 
 		// Otherwise remove the width we added from the existing width.
 		int tmpWidth = ( ( _widthCurrent - _widthSetByPlugin ) + _widthOrig );
-		::SendMessage( svp->_hView, SCI_SETMARGINWIDTHN, _target, tmpWidth );
+		::SendMessage( svp[view]->_hView, SCI_SETMARGINWIDTHN, _target, tmpWidth );
 	}
 }
 
 //  Initializes Notepad++ and Scintilla to be able to use the markers from information set from
 //  the xml configuration data.
-int Plugin_Line_Marker::init()
+void Plugin_Line_Marker::init( int markNum )
 {
-	int retVal = 0;  //  this will be the Scintilla maker pointer.
+	id = markNum;
 
-	return retVal;
-}
-
-//  Sends Scintilla the parameters to setup a marker.
-//
-//  xpm must be defined for markerType SC_MARK_PIXMAP.
-//  alpha will be calculated from back if the passed value is NULL.
-int Plugin_Line_Marker::define(int markerNum, int markerType, COLORREF fore, COLORREF back,
-						  char *xpm = NULL, int alpha = NULL)
-{
-	int retVal = SendMessage( margin.svp->_hView, SCI_MARKERDEFINE, markerNum, markerType );
-
-	if ( (markerType == SC_MARK_PIXMAP) && xpm ) {
-		SendMessage( margin.svp->_hView, SCI_MARKERDEFINEPIXMAP, markerNum, (LPARAM) xpm);
+	if ( type == SC_MARK_PIXMAP && pXpmFields.empty() ) {
+		if ( xpmFileName.empty() ) type = 0; // Same default as Scintilla
+		else if (! readXpmDataFile() ) type = 0;
 	}
 
-	//  These colors are used when marker is treated as a highlight instead of symbol.  Which
-	//  can happen when the margin is hidden.
-	SendMessage( margin.svp->_hView, SCI_MARKERSETFORE, markerNum, fore);
-	SendMessage( margin.svp->_hView, SCI_MARKERSETBACK, markerNum, back);
-
 	// Calculate and assign an alpha blend based on the background color.
-	if ( ( markerType != SC_MARK_PIXMAP ) || ( (markerType == SC_MARK_PIXMAP) && (! alpha) ) ) {
+	// Unless it is already within range.
+	if ( ( alpha < 0 ) || ( alpha > 255 ) ) {
 		int R = GetRValue( back );
 		int G = GetGValue( back );
 		int B = GetBValue( back );
@@ -312,9 +215,93 @@ int Plugin_Line_Marker::define(int markerNum, int markerType, COLORREF fore, COL
 		int iMin = min(R, min(G, B));
 		alpha = 255 - (((iMax + iMin) * 240 + 255) / 510);
 	}
-	SendMessage( margin.svp->_hView, SCI_MARKERSETALPHA, markerNum, alpha);
+	
+	for ( int currView = MAIN_VIEW; currView <= SUB_VIEW; currView++ ) {
+		if ( type == SC_MARK_PIXMAP ) {
+			SendMessage( margin.svp[currView]->_hView, SCI_MARKERDEFINEPIXMAP, id, (LPARAM)getXpmData() );
+		}
+		else {
+			SendMessage( margin.svp[currView]->_hView, SCI_MARKERDEFINE, id, type );
+		}
+		SendMessage( margin.svp[currView]->_hView, SCI_MARKERSETFORE, id, fore);
+		SendMessage( margin.svp[currView]->_hView, SCI_MARKERSETBACK, id, back);
+		SendMessage( margin.svp[currView]->_hView, SCI_MARKERSETALPHA, id, alpha);
+	}
+}
 
-	return ( retVal );
+//  Read XPM data from a .xpm file.
+bool Plugin_Line_Marker::readXpmDataFile()
+{
+	//  Before defining the marker see about getting the xpm data (if needed)
+
+	//  First try the application data folder.
+	TCHAR filePath[MAX_PATH];
+	::SendMessage( npp_plugin::hNpp(), NPPM_GETPLUGINSCONFIGDIR, MAX_PATH, (LPARAM)filePath );
+	PathAppend( filePath, TEXT("\\icons") );
+	PathAppend( filePath, xpmFileName.c_str() );
+
+	if (!PathFileExists(filePath)) {
+		lstrcpyn( filePath, TEXT("\0"), MAX_PATH );
+		::SendMessage( npp_plugin::hNpp(), NPPM_GETNPPDIRECTORY, MAX_PATH, (LPARAM)filePath );
+		PathAppend( filePath, TEXT("plugins\\Config\\icons") );
+		PathAppend( filePath, xpmFileName.c_str() );
+
+		if (!PathFileExists(filePath)) {
+			tstring msgText;
+			msgText.assign( TEXT("The marker configuration file ") );
+			msgText.append( xpmFileName );
+			msgText.append( TEXT(" for the '") );
+			msgText.append( npp_plugin::getName() );
+			msgText.append( TEXT("' plugin was not found!\n") );
+
+			::MessageBox( npp_plugin::hNpp(), msgText.c_str() , TEXT("Plugin File Load Error"), MB_ICONERROR );
+
+			this->type = 0;
+			return ( false );
+		}
+	}
+
+	if(! XpmReadFileToBuffer( filePath ) ) return ( false );
+
+	return ( true );
+}
+
+
+int Plugin_Line_Marker::XpmReadFileToBuffer( TCHAR filename[MAX_PATH] )
+{
+	std::fstream xpmFile(filename);
+	std::string tmpXpmBuff;
+
+	while(! xpmFile.eof() ) {
+		xpmFile.ignore(100, '\"');
+		xpmFile.putback('\"');
+		std::getline( xpmFile, tmpXpmBuff, xpmFile.widen(',') );
+
+		if ( xpmFile.eof() ) {
+			tmpXpmBuff = tmpXpmBuff.substr(0, tmpXpmBuff.find_last_of('\"') + 1 );
+		}
+
+		tmpXpmBuff = tmpXpmBuff.substr( 1, tmpXpmBuff.length() - 2 );
+		xpmFields.push_back(tmpXpmBuff);
+		tmpXpmBuff.clear();
+	}
+
+	pXpmFields.reserve(xpmFields.size());
+	std::vector<std::string>::iterator insIter = xpmFields.begin();
+	while ( insIter != xpmFields.end() ) {
+		pXpmFields.push_back( insIter->c_str() );
+		insIter++;
+	}
+
+    return ( !xpmFile.fail() );
+}
+
+
+const char** Plugin_Line_Marker::getXpmData()
+{
+	const char ** test = &pXpmFields[0];
+
+	return ( &pXpmFields[0] );
 }
 
 } //  End namespace: marker

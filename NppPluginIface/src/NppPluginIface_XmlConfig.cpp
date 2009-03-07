@@ -22,6 +22,7 @@
  */
 
 #include "NppPluginIface_XmlConfig.h"
+#include <stdarg.h>
 
 namespace npp_plugin {
 
@@ -276,6 +277,12 @@ bool setGUIConfigValue( tstring name, tstring attrib, tstring value_ )
 	return ( retVal );
 }
 
+//  Returns TiXmlDocument pointer to XmlConfigDoc, for convience reading values outside of GUIConfig node.
+TiXmlDocument* get_pXmlPluginConfigDoc()
+{
+	if (! initXmlPluginConfig() ) return ( NULL );
+	return ( _pXmlPluginConfigDoc );
+}
 
 }  // End Namespace: xml_config
 

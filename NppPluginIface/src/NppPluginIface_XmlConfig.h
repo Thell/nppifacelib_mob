@@ -62,6 +62,7 @@ namespace xmlconfig {
 
 tstring getGUIConfigValue( tstring name, tstring attrib );
 bool setGUIConfigValue( tstring name, tstring attrib, tstring value );
+TiXmlDocument* get_pXmlPluginConfigDoc();
 
 }  // End Namespace: xmlconfig
 

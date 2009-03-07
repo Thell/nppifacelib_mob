@@ -83,27 +83,39 @@ class Margin
 	int _maskSetByPlugin;
 
 public:
-	bool adjustWidth( int value );
-	void restoreWidth();
+	bool adjustWidth( int value, int view );
+	void restoreWidth( int view );
 	void setTarget(MARGIN target)
 		{ if (! (target == MARGIN_FOLD) || (target == MARGIN_RESERVED) ) _target = target; };
 	bool setMask(int mask);
 	void restoreMask();
 
-	ScintillaViewParams* svp;
+	ScintillaViewParams* svp[2];
 	NppGUI* nppGUI;
 
 	Margin(){
-		svp = new ScintillaViewParams;
+		svp[MAIN_VIEW] = new ScintillaViewParams;
+		svp[SUB_VIEW] = new ScintillaViewParams;
 		nppGUI = new NppGUI;
 	}
 };
 
+
 struct Plugin_Line_Marker {
+	int id;
+	int type;
+
 	COLORREF back;
 	COLORREF fore;
-	int type;
-	tstring xpm;
+	int alpha;
+
+	tstring xpmFileName;
+	bool readXpmDataFile();
+	int XpmReadFileToBuffer( TCHAR filename[MAX_PATH] );
+	std::vector<std::string> xpmFields;			//  Data read in from file.
+	std::vector<const char *> pXpmFields;		//  Allows passing of char** to Scintilla
+	const char** getXpmData();
+
 
 	bool trackUNDOREDO;
 	bool active;
@@ -111,10 +123,11 @@ struct Plugin_Line_Marker {
 
 	Margin margin;
 
-	int define( int markerNum, int markerType, COLORREF fore, COLORREF back, char* xpm, int alpha );
-	int init();
+	void init( int markerNumber );
 	void insert(int line);
 	void remove(int line);
+
+	//  Array for xpm data
 };
 
 enum actionType { insertAction, removeAction, startAction };
@@ -175,9 +188,6 @@ public:
 };
 
 int * getAvailableMarkers( int nb_markers_needed );
-void _getNextMarkerType();
-void _gotMarkerTypeReply(int markerNumber, int markerType, int targetView);
-
 void setMarkerAvailable( int markerNumber );
 
 int string2marker(tstring string);

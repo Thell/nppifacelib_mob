@@ -33,3 +33,16 @@ Scintilla bin directory to the PowerEditor bin directory.
  Should be ready to start coding now.
  
 - Remember that there aren't dependencies setup between the projects...
+
+
+
+=================
+
+Misc notes about some fo the extensions:
+
+_Markers:
+- It would be nice to add a markergetback and markergetfor so plugins could watch for style
+  updates and for changed values without having to reload and read the values from a file.
+  
+  
+ 

@@ -18,6 +18,7 @@
 //  Change Marker Plugin for use with Notepad++.
 
 #include "NppPlugin_ChangeMarker.h"
+#include <vector>
 
 namespace npp_plugin_changemarker {
 
@@ -58,11 +59,20 @@ void initPlugin()
 		currCM->markName = ( i == CM_SAVED ) ? ( TEXT("CM_SAVED") ) : ( TEXT("CM_NOTSAVED") );
 		currCM->styleName = ( i == CM_SAVED ) ? ( TEXT("Changes: Saved") ) : ( TEXT("Changes: Not Saved") );
 
-		//  Style Settings.
-		currCM->fore = 
-			::_tcstol( (LPCTSTR)(xml::getGUIConfigValue( currCM->styleName, TEXT("fgColor") ).c_str() ), NULL, 16 );
-		currCM->back = 
-			::_tcstol( (LPCTSTR)(xml::getGUIConfigValue( currCM->styleName, TEXT("bgColor") ).c_str() ), NULL, 16 );
+		//  Style Settings.  From WodsStyle node ( outside of GuiConfig element )
+		TiXmlHandle hXmlDoc( xml::get_pXmlPluginConfigDoc() );
+		TiXmlElement* style_Node = hXmlDoc.FirstChild( 
+			TEXT("NotepadPlus")).FirstChild( TEXT("LexerStyles")).FirstChild(
+			TEXT("LexerType")).FirstChildElement( TEXT("WordsStyle") ).Element();
+
+		for( style_Node; style_Node; style_Node = style_Node->NextSiblingElement() ) {
+			tstring elemAttr_Name( style_Node->Attribute( TEXT("name") ) );
+			if ( elemAttr_Name.compare( currCM->styleName ) == 0 ) {
+				unsigned long result = ::_tcstol( (LPCTSTR)style_Node->Attribute( TEXT("bgColor") ), NULL, 16 );
+				currCM->back = (RGB((result >> 16) & 0xFF, (result >> 8) & 0xFF, result & 0xFF)) | (result & 0xFF000000);
+				break;
+			}
+		}
 
 		//  Marker View Settings
 		currCM->active = _active;
@@ -70,16 +80,21 @@ void initPlugin()
 			( xml::getGUIConfigValue( currCM->markName, TEXT("displayMark") ) == TEXT("true") ) ? ( true ) : ( false );
 		currCM->type = mark::string2marker( xml::getGUIConfigValue( currCM->markName, TEXT("markType") ) );
 		if ( currCM->type == SC_MARK_PIXMAP ) {
-			currCM->xpm.assign( xml::getGUIConfigValue( currCM->markName, TEXT("xpm") ) );
+			currCM->xpmFileName.assign( xml::getGUIConfigValue( currCM->markName, TEXT("xpm") ) );
 
 			// This should be in the marker extension.
-			if (! currCM->xpm.compare( currCM->xpm.length() - 4, 4, TEXT(".xpm") ) == 0 ) currCM->xpm.append( TEXT(".xpm") );
+			if (! currCM->xpmFileName.compare( currCM->xpmFileName.length() - 4, 4, TEXT(".xpm") ) == 0 ) 
+				currCM->xpmFileName.append( TEXT(".xpm") );
 		}
+		currCM->alpha = 
+			::_tcstol( (LPCTSTR)(xml::getGUIConfigValue( currCM->markName, TEXT("alpha") ).c_str() ), NULL, 16 );
 
 		//  Margin View Settings
 		currCM->margin.setTarget( MARGIN(_margin) );
-		currCM->margin.svp[MAIN_VIEW]._pluginMarginShow = _mvMarginShow;
-		currCM->margin.svp[SUB_VIEW]._pluginMarginShow = _svMarginShow;
+		currCM->margin.svp[MAIN_VIEW]->_pluginMarginShow = _mvMarginShow;
+		currCM->margin.svp[MAIN_VIEW]->_hView = hMainView();
+		currCM->margin.svp[SUB_VIEW]->_pluginMarginShow = _svMarginShow;
+		currCM->margin.svp[SUB_VIEW]->_hView = hSecondView();
 
 		cm[i] = currCM;
 	}
@@ -124,10 +139,13 @@ void initPlugin()
 //  Initalizes the markers found for this plugin.
 void initMarker( int* markerArray )
 {
+	int currMarker = 0;
 	for ( int i = 0; i < NB_MAX_PLUGINMARKERS; i++ ) {
 		if ( markerArray[i] == 1 ) {
 			//  initialize this marker
-			bool stop = true;
+			cm[currMarker]->init(i);
+			if ( currMarker == NB_CHANGEMARKERS ) break;
+			currMarker++;
 		}
 	}
 
@@ -136,14 +154,88 @@ void initMarker( int* markerArray )
 //  Checks and updates marker styles when notified.
 void wordStylesUpdatedHandler()
 {
-	//  Check for style updates
+	namespace xml = npp_plugin::xmlconfig;
+	TiXmlDocument* pluginConfigDoc = xml::get_pXmlPluginConfigDoc();
+	if (! pluginConfigDoc->LoadFile() ) return;
 
-	//  Change styles if needed.
+	//  Marker Specific Settings
+	for ( int i = 0; i < NB_CHANGEMARKERS; i++ ) {
+		Change_Mark* newCM = new Change_Mark;
+		newCM->markName = ( i == CM_SAVED ) ? ( TEXT("CM_SAVED") ) : ( TEXT("CM_NOTSAVED") );
+		newCM->styleName = ( i == CM_SAVED ) ? ( TEXT("Changes: Saved") ) : ( TEXT("Changes: Not Saved") );
+
+		//  Style Settings.  From WodsStyle node ( outside of GuiConfig element )
+		TiXmlHandle hXmlDoc( xml::get_pXmlPluginConfigDoc() );
+		TiXmlElement* style_Node = hXmlDoc.FirstChild( 
+			TEXT("NotepadPlus")).FirstChild( TEXT("LexerStyles")).FirstChild(
+			TEXT("LexerType")).FirstChildElement( TEXT("WordsStyle") ).Element();
+
+		for( style_Node; style_Node; style_Node = style_Node->NextSiblingElement() ) {
+			tstring elemAttr_Name( style_Node->Attribute( TEXT("name") ) );
+			if ( elemAttr_Name.compare( newCM->styleName ) == 0 ) {
+				unsigned long result = ::_tcstol( (LPCTSTR)style_Node->Attribute( TEXT("bgColor") ), NULL, 16 );
+				newCM->back = (RGB((result >> 16) & 0xFF, (result >> 8) & 0xFF, result & 0xFF)) | (result & 0xFF000000);
+				break;
+			}
+		}
+
+		Change_Mark* currCM = cm[i];
+		if (! ( currCM->fore == newCM->fore && currCM->back == newCM->back ) ) {
+			cm[i]->back = newCM->back;
+			//  If an alpha wasn't defined in the xml force a recalculation of it based on the new color.
+			if ( xml::getGUIConfigValue( newCM->styleName, TEXT("alpha") ).empty() ) cm[i]->alpha = -1;
+			
+			cm[i]->init( cm[i]->id );
+		}
+	}
 }
 
 void modificationHandler ( SCNotification* scn )
 {
+	npp_plugin::hCurrViewNeedsUpdate();
+
 	//  Process document modification messages
+	//  Each UserPerformed SC_STARTACTION increments our action counter.
+	if ( scn->modificationType & ( SC_PERFORMED_USER & SC_STARTACTION ) ) {
+		//actionCount++;
+	}
+
+	if ( scn->modificationType & ( SC_MOD_BEFOREINSERT | SC_MOD_BEFOREDELETE ) ) {
+		//
+	}
+	if ( scn->modificationType & ( SC_MOD_INSERTTEXT | SC_MOD_DELETETEXT ) ) {
+		//  Just a generic change and no marker reset is needed.
+		for ( int i = 0; i <= NB_MAX_PLUGINMARKERS; i++ ) {
+			::SendMessage( hCurrView(), SCI_MARKERADD, i, i );
+		}
+		bool stop = true;
+	}
+
+	if ( scn->modificationType & ( SC_STARTACTION ^ SC_PERFORMED_USER ) ) {
+		if ( scn->modificationType & ( SC_PERFORMED_UNDO ) ) {
+		//	actionCount--;
+		}
+
+		if ( scn->modificationType & ( SC_MOD_DELETETEXT) ) {
+			//  An undo of an insert is actually a delete so we need to remove/reset markers.
+		//	undoredo_RemoveHandler(scn);
+		}
+		else if ( scn->modificationType & ( SC_MOD_INSERTTEXT ) ) {
+			//  An undo of a delete is an actually an insert so we need to add/reset markers.
+		//	undoredo_InsertHandler(scn);
+		}
+	}
+
+		else if (  scn->modificationType & ( SC_PERFORMED_REDO ) ) {
+			if ( scn->modificationType & ( SC_MOD_DELETETEXT) ) {
+				//  An redo of a delete is still a delete so we need to remove/reset markers.
+			//	undoredo_RemoveHandler(scn);
+			}
+			else if ( scn->modificationType & ( SC_MOD_INSERTTEXT ) ) {
+				//  An redo of an insert is still an insert so we need to add/reset markers.
+			//	undoredo_InsertHandler(scn);
+			}
+		}
 }
 
 //  Alters the state of current Changes: Not Saved markers to Changes: Saved.
