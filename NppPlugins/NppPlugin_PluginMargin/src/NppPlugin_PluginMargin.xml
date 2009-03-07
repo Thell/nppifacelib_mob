@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="Windows-1252" ?>
+<NotepadPlus>
+    <GUIConfigs>
+        <!-- Valid values for pluginMargin are "show" and "hide" -->
+        <!-- The margin follows the same width defaults as the others ( 16 pixels wide ) -->
+        <GUIConfig name="MAIN_VIEW" pluginMargin="show" />
+        <GUIConfig name="SUB_VIEW" pluginMargin="show" />
+    </GUIConfigs>
+</NotepadPlus>
