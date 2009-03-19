@@ -25,8 +25,10 @@ namespace npp_plugin_changemarker {
 
 using namespace npp_plugin;
 using namespace npp_plugin::markers;
+using namespace npp_plugin::actionhistory;
 
 //  Menu Command IDs
+const int CMD_OFFSET = 1; // Offset between MENU_COMMAND and MARGIN for conversion between them.
 enum MENU_COMMANDS {
 	CMD_JUMPPREV = 1,
 	CMD_JUMPNEXT,
@@ -34,8 +36,10 @@ enum MENU_COMMANDS {
 	CMD_BOOKMARK,
 	CMD_PLUGIN,
 	CMD_HIGHLIGHT,	
-	CMD_DISABLE
+	CMD_DISABLE,
+	NB_MENU_COMMANDS
 };
+
 
 //  Markers
 enum CHANGE_MARK {
@@ -44,14 +48,27 @@ enum CHANGE_MARK {
 	NB_CHANGEMARKERS,
 };
 
-
+//  Change markers class
 class Change_Mark: public Plugin_Line_Marker {
-	int _cm_base;
-	int _cm_mask;
-
+	bool _tempMarkerOverride;
+	int _overRiddenMarkerType;
 public:
 	tstring markName;
 	tstring styleName;
+	int _origTargetMargin;	//  Placeholder for target margin until marker id is aquired.
+	void setTargetMarginMenuItem( MARGIN target );
+	void markerOverride( int markerType );
+	void resetOverride();
+
+	//  Marker History
+	int prevActionLine;
+	int prevActionHandle;
+	int prevActionHandleRefIndex;
+	int tmpActionHandle;
+	PluginActionHistory history;
+
+	Change_Mark()
+		:prevActionHandle(0), tmpActionHandle(0){};
 };
 
 

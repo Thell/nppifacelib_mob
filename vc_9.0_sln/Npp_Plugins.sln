@@ -16,6 +16,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NppPlugin_SciMarkerSymbol",
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NppPlugin_Template", "..\NppPlugins\NppPlugin_Template\visual.net\NppPlugin_Template.vcproj", "{A6F07905-39EA-4C02-80AA-1448036877D2}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NppPlugin_PluginMargin", "..\NppPlugins\NppPlugin_PluginMargin\visual.net\NppPlugin_PluginMargin.vcproj", "{865506C5-8E7E-4B9F-B0A4-CDAA24DA64BF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug Unicode|Win32 = Debug Unicode|Win32
@@ -72,6 +74,14 @@ Global
 		{A6F07905-39EA-4C02-80AA-1448036877D2}.Release Unicode|Win32.Build.0 = Release_Unicode|Win32
 		{A6F07905-39EA-4C02-80AA-1448036877D2}.Release|Win32.ActiveCfg = Release|Win32
 		{A6F07905-39EA-4C02-80AA-1448036877D2}.Release|Win32.Build.0 = Release|Win32
+		{865506C5-8E7E-4B9F-B0A4-CDAA24DA64BF}.Debug Unicode|Win32.ActiveCfg = Debug_Unicode|Win32
+		{865506C5-8E7E-4B9F-B0A4-CDAA24DA64BF}.Debug Unicode|Win32.Build.0 = Debug_Unicode|Win32
+		{865506C5-8E7E-4B9F-B0A4-CDAA24DA64BF}.Debug|Win32.ActiveCfg = Debug|Win32
+		{865506C5-8E7E-4B9F-B0A4-CDAA24DA64BF}.Debug|Win32.Build.0 = Debug|Win32
+		{865506C5-8E7E-4B9F-B0A4-CDAA24DA64BF}.Release Unicode|Win32.ActiveCfg = Release_Unicode|Win32
+		{865506C5-8E7E-4B9F-B0A4-CDAA24DA64BF}.Release Unicode|Win32.Build.0 = Release_Unicode|Win32
+		{865506C5-8E7E-4B9F-B0A4-CDAA24DA64BF}.Release|Win32.ActiveCfg = Release|Win32
+		{865506C5-8E7E-4B9F-B0A4-CDAA24DA64BF}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

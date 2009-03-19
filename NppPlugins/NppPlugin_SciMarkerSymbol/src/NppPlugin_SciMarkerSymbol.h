@@ -73,6 +73,7 @@ namespace npp_plugin_scimarkersymbol {
 const int NB_MAX_PLUGINMARKERS = 16;
 
 int MARKERSYMBOL(int markerNumber, unsigned int targetView);
+void MARKERUNDEFINE( int markerNumber, unsigned int targetView);
 
 } //  End namespace: npp_plugin_scimarkersymbol
 

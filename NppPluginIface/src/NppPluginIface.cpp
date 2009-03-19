@@ -178,7 +178,10 @@ tstring* getModuleBaseName()
 HWND hNpp() { return _hNpp; }
 
 //  Returns the handle used by the view with matching int.  ( MAIN_VIEW or SUB_VIEW )
-HWND hViewByInt(int view) { return ( ( view == 0 ) ? ( hMainView() ) : ( hSecondView() ) ); }
+HWND hViewByInt(int view) { return ( ( view == 0 ) ? ( _hScintillaMain ) : ( _hScintillaSecond ) ); }
+
+//  Returns the string value name of the matching int view.
+tstring getViewString( int view ) { return ( ( view == 0 ) ? ( TEXT("MAIN_VIEW") ) : ( TEXT("SUB_VIEW") ) ); }
 
 //  Returns the handle used in messaging Notepad++'s main view.
 HWND hMainView() { return _hScintillaMain; }
@@ -203,6 +206,9 @@ HWND hCurrView()
 	}
 	return _hCurrView;
 }
+
+//  Returns the handle for the Notepad++ view not currently focused.
+HWND hAltView() { return ( ( hCurrView() == hMainView() ) ? ( _hScintillaSecond ) : ( _hScintillaMain ) ); }
 
 //  Returns the current target of hCurrView().  0 for main view and 1 for second view.
 int intCurrView() { return ( ( hCurrView() == hMainView() ) ? ( 0 ) : ( 1 ) ); }

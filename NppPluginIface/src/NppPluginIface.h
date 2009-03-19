@@ -77,9 +77,11 @@ tstring* getModuleName();						//  Returns the dll modules proper name.
 tstring* getModuleBaseName();					//  Returns the dll modules proper name without the .dll extension.
 HWND hNpp();									//  Returns the main Notepad++ handle.
 HWND hViewByInt(int view);						//  Returns handle for the view by int.
+tstring getViewString(int view);				//  Returns string value of a views name.
 HWND hMainView();								//  Returns handle used in messaging the main view.
 HWND hSecondView();								//  Returns handle used in messaging the secondary view.
 HWND hCurrView();								//  Returns handle for the currently focused view.
+HWND hAltView();								//  Returns handle for the non-focused view.
 int intCurrView();								//  Returns 0 for main view and 1 for second view.
 bool isNppReady();								//  Returns Notepad++ initialization state.
 int getPluginFuncCount();						//  Returns the size of the Function vector.

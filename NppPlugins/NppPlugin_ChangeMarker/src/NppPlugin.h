@@ -50,6 +50,9 @@
 #include "NppPluginIface_XmlConfig.h"
 #include "NppPluginIface_Markers.h"
 #include "NppPluginIface_CmdMap.h"
+#include "NppPluginIface_DocTabMap.h"
+#include "NppPluginIface_ActionIndex.h"
+#include "NppPluginIface_ActionHistory.h"
 //#include "NppPluginIface_ExtLexer.h"
 
 namespace npp_plugin {

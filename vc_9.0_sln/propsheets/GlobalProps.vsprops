@@ -44,7 +44,7 @@
 	/>
 	<UserMacro
 		Name="NppIncludes"
-		Value="$(NppSrcDir)MISC\; $(NppSrcDir)MISC\PluginsManager\; $(NppSrcDir)TinyXml\;$(NppSrcDir)TinyXML\tinyXmlA; $(NppSrcDir)MISC\Common\"
+		Value="$(NppSrcDir); $(NppSrcDir)MISC\; $(NppSrcDir)MISC\PluginsManager\; $(NppSrcDir)TinyXml\;$(NppSrcDir)TinyXML\tinyXmlA; $(NppSrcDir)MISC\Common\; $(NppSrcDir)ScitillaComponent\; $(NppSrcDir)WinControls\; $(NppSrcDir)WinControls\ToolBar\; $(NppSrcDir)WinControls\ImageListSet\; $(NppSrcDir)WinControls\shortcut\; $(NppSrcDir)WinControls\StaticDialog\; $(NppSrcDir)WinControls\ContextMenu\"
 		PerformEnvironmentSet="true"
 	/>
 	<UserMacro

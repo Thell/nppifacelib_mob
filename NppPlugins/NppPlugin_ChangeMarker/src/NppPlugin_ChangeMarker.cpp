@@ -18,24 +18,117 @@
 //  Change Marker Plugin for use with Notepad++.
 
 #include "NppPlugin_ChangeMarker.h"
+#include <unordered_map>
 #include <vector>
+
+//  <--- headers for testing actioncounter --->
+#include "Platform.h"
+#include "UniConversion.h"
+#include "Indicator.h"
+#include "XPM.h"
+#include "LineMarker.h"
+#include "Style.h"
+#include "ViewStyle.h"
+#include "SplitVector.h"
+#include "Partitioning.h"
+#include "RunStyles.h"
+#include "Decoration.h"
+#include "CharClassify.h"
+#include "CellBuffer.h"
+#include "Document.h"
+#include "PositionCache.h"
+#include "KeyMap.h"
+#include "ContractionState.h"
+
+//  Easier to just add this here than include other files.
+struct RangeToFormat {
+	HDC hdc;
+	HDC hdcTarget;
+	RECT rc;
+	RECT rcPage;
+	CharacterRange chrg;
+};
+
+#include "Editor.h"
+
+//  ^^^^  End headers for testing action counter.
 
 namespace npp_plugin_changemarker {
 
+using namespace npp_plugin;
+namespace xml = npp_plugin::xmlconfig;
+namespace mark = npp_plugin::markers;
+namespace a_index = npp_plugin::actionindex;
+namespace a_history = npp_plugin::actionhistory;
+
 Change_Mark* cm[NB_CHANGEMARKERS];
+bool _doDisable = false;
 
-namespace {
+//  Set both markers target margin for, set menu item checks, and save to config file.
+void Change_Mark::setTargetMarginMenuItem( MARGIN target )
+{
+	// Two passes, the first to unset current marked menu item, second to set the new one.
+	int menuTarget;
+	int UNCHECK = 0;
+	int CHECK = 1;
+	for ( int i = UNCHECK; i <= CHECK; i++ ) {
+		menuTarget = ( i == UNCHECK ) ? ( this->margin.getTarget() ) : ( target );
 
+		int cmdID;
+		switch ( menuTarget )
+		{
+		case MARGIN_BOOKMARK:
+			cmdID = getCmdId( CMD_BOOKMARK );
+			break;
+		case MARGIN_LINENUMBER:
+			if ( ( i == CHECK ) && ( this->type != SC_MARK_LEFTRECT ) ) {
+				//  Only allow _LEFTRECT type in LineNumber margin.
+				this->markerOverride( SC_MARK_LEFTRECT );
+			}
+			else if ( ( i == UNCHECK ) && (menuTarget == MARGIN_LINENUMBER) &&
+				( this->_tempMarkerOverride ) ) this->resetOverride();
 
-} // End un-named namedspace.
+			cmdID = getCmdId( CMD_LINENUMBER );
+			break;
+		case MARGIN_PLUGIN:
+			cmdID = getCmdId( CMD_PLUGIN );
+			break;
+		default:
+			cmdID = getCmdId( CMD_HIGHLIGHT );
+			break;
+		}
+		::SendMessage( hNpp(), NPPM_SETMENUITEMCHECK, cmdID, i );
+	}
+
+	//  Set the new target marker margin.
+	this->margin.setTarget( target, this->id );
+	//  Write config value to file.
+	xml::setGUIConfigValue( TEXT("SciMarkers"), TEXT("targetMargin"), mark::margin2string(target) );
+
+}
+
+//  Override the current marker type id without writing out to the config file to handle cases
+//  where the current marker type would not work in the margin.  ie: _PIXMAP in linenumber margin.
+void Change_Mark::markerOverride(int markerType)
+{
+	//  Temp override of the current marker when changing margins.  Does not alter config file.
+	this->_tempMarkerOverride = true;
+	this->_overRiddenMarkerType = this->type;
+	this->type = markerType;
+	this->init( this->id );
+}
+
+//  Resets the marker type to values prior to being overridden.
+void Change_Mark::resetOverride()
+{
+	this->_tempMarkerOverride = false;	
+	this->type = this->_overRiddenMarkerType;
+	this->init( this->id );
+}
 
 //  Initializes the plugin and sets up config values.
 void initPlugin()
 {
-	namespace xml = npp_plugin::xmlconfig;
-	namespace mark = npp_plugin::markers;
-
-
 	//  Global Plugin Settings
 	bool _track = false;
 	if ( xml::getGUIConfigValue( TEXT("SciMarkers"), TEXT("trackUNDOREDO") ) == TEXT("true") ) _track = true;
@@ -45,16 +138,10 @@ void initPlugin()
 
 	int _margin = mark::string2margin( xml::getGUIConfigValue( TEXT("SciMarkers"), TEXT("margin") ) );
 
-	//  N++ Plugin Margin Setting ( there should be an external control for this!)
-	bool _mvMarginShow =
-		( xml::getGUIConfigValue( TEXT("MAIN_VIEW"), TEXT("pluginMargin") ) == TEXT("show") ) ? ( true ) : ( false );
-	bool _svMarginShow = 
-		( xml::getGUIConfigValue( TEXT("SUB_VIEW"), TEXT("pluginMargin") ) == TEXT("show") ) ? ( true ) : ( false );
-
 	//  Marker Specific Settings
 	for ( int i = 0; i < NB_CHANGEMARKERS; i++ ) {
 		Change_Mark* currCM = new Change_Mark;
-		//cm[i] = new Change_Mark;
+
 		//  ID Settings.
 		currCM->markName = ( i == CM_SAVED ) ? ( TEXT("CM_SAVED") ) : ( TEXT("CM_NOTSAVED") );
 		currCM->styleName = ( i == CM_SAVED ) ? ( TEXT("Changes: Saved") ) : ( TEXT("Changes: Not Saved") );
@@ -90,12 +177,10 @@ void initPlugin()
 			::_tcstol( (LPCTSTR)(xml::getGUIConfigValue( currCM->markName, TEXT("alpha") ).c_str() ), NULL, 16 );
 
 		//  Margin View Settings
-		currCM->margin.setTarget( MARGIN(_margin) );
-		currCM->margin.svp[MAIN_VIEW]->_pluginMarginShow = _mvMarginShow;
-		currCM->margin.svp[MAIN_VIEW]->_hView = hMainView();
-		currCM->margin.svp[SUB_VIEW]->_pluginMarginShow = _svMarginShow;
-		currCM->margin.svp[SUB_VIEW]->_hView = hSecondView();
+		currCM->_origTargetMargin = _margin;
 
+		//  Handle linenumber margin special markertype case.
+		//  The only marker that should be used in the linenumber margin is _LEFTRECT
 		cm[i] = currCM;
 	}
 
@@ -144,6 +229,8 @@ void initMarker( int* markerArray )
 		if ( markerArray[i] == 1 ) {
 			//  initialize this marker
 			cm[currMarker]->init(i);
+			cm[currMarker]->margin.setTarget( MARGIN( cm[currMarker]->_origTargetMargin ), cm[currMarker]->id );
+			cm[currMarker]->setTargetMarginMenuItem( cm[currMarker]->margin.getTarget() );
 			if ( currMarker == NB_CHANGEMARKERS ) break;
 			currMarker++;
 		}
@@ -154,7 +241,6 @@ void initMarker( int* markerArray )
 //  Checks and updates marker styles when notified.
 void wordStylesUpdatedHandler()
 {
-	namespace xml = npp_plugin::xmlconfig;
 	TiXmlDocument* pluginConfigDoc = xml::get_pXmlPluginConfigDoc();
 	if (! pluginConfigDoc->LoadFile() ) return;
 
@@ -190,52 +276,285 @@ void wordStylesUpdatedHandler()
 	}
 }
 
+//  Document modification handler for 'BEFORE' messages to track marker handle changes before
+//  the doc is actually modified.
+void preModificationHandler ( SCNotification* scn )
+{
+}
+
+//  Document modification handler to identify and track line changes.
 void modificationHandler ( SCNotification* scn )
 {
-	npp_plugin::hCurrViewNeedsUpdate();
 
-	//  Process document modification messages
-	//  Each UserPerformed SC_STARTACTION increments our action counter.
-	if ( scn->modificationType & ( SC_PERFORMED_USER & SC_STARTACTION ) ) {
-		//actionCount++;
+#define MSG_DEBUGGING
+#ifdef MSG_DEBUGGING
+	int dbgmsg = scn->nmhdr.code;
+	int dbgflags = scn->modificationType;
+	TCHAR dbgflagHEX[65];
+	::_itot(dbgflags, dbgflagHEX, 16);
+	TCHAR dbgflag2[65];
+	::_itot(dbgflags, dbgflag2, 2);
+	int dbgLines = scn->linesAdded;
+#endif
+
+	//  Static state variable for just BEFOREDELETE notifications, which are always followed
+	//  by the actual, so no need to identify by pdoc.
+	static bool prevWasBeforeDelete = false;
+
+	//  <---  Leave if we can. --->
+	if ( _doDisable ) return;
+
+	//  Send the notification for processing and get back this documents history state.
+	int pDoc;
+	int prevIndex;
+	int currIndex;
+	bool excluded;
+	bool dryrun;
+	boost::tuples::tie( pDoc, prevIndex, currIndex, excluded, dryrun) =
+		a_index::processSCNotification( scn );
+
+	if ( excluded ) {
+		return;
 	}
 
-	if ( scn->modificationType & ( SC_MOD_BEFOREINSERT | SC_MOD_BEFOREDELETE ) ) {
-		//
-	}
-	if ( scn->modificationType & ( SC_MOD_INSERTTEXT | SC_MOD_DELETETEXT ) ) {
-		//  Just a generic change and no marker reset is needed.
-		for ( int i = 0; i <= NB_MAX_PLUGINMARKERS; i++ ) {
-			::SendMessage( hCurrView(), SCI_MARKERADD, i, i );
-		}
-		bool stop = true;
+	if ( dryrun && ( scn->modificationType & ( SC_PERFORMED_UNDO | SC_PERFORMED_REDO ) ) ) {
+		prevWasBeforeDelete = false;
+		return;
 	}
 
-	if ( scn->modificationType & ( SC_STARTACTION ^ SC_PERFORMED_USER ) ) {
-		if ( scn->modificationType & ( SC_PERFORMED_UNDO ) ) {
-		//	actionCount--;
-		}
+	//  Notification is truly a modify that we need to handle.
+	HWND hView = reinterpret_cast<HWND>(scn->nmhdr.hwndFrom);
+	int currLine = ::SendMessage( hView, SCI_LINEFROMPOSITION, scn->position, 0);
+	int startLine = currLine;
+	int modFlags = scn->modificationType;
 
-		if ( scn->modificationType & ( SC_MOD_DELETETEXT) ) {
-			//  An undo of an insert is actually a delete so we need to remove/reset markers.
-		//	undoredo_RemoveHandler(scn);
-		}
-		else if ( scn->modificationType & ( SC_MOD_INSERTTEXT ) ) {
-			//  An undo of a delete is an actually an insert so we need to add/reset markers.
-		//	undoredo_InsertHandler(scn);
-		}
-	}
+	//  <---  Marker Control --->
 
-		else if (  scn->modificationType & ( SC_PERFORMED_REDO ) ) {
-			if ( scn->modificationType & ( SC_MOD_DELETETEXT) ) {
-				//  An redo of a delete is still a delete so we need to remove/reset markers.
-			//	undoredo_RemoveHandler(scn);
+	//  Undo actions.
+	if ( modFlags & ( SC_PERFORMED_UNDO ) ) {
+		//  Using the prevIndex since we are going backwards.
+		if ( cm[CM_NOTSAVED]->history.setTargetIndex( pDoc, prevIndex ) ) {
+
+			int nb_actions_at_index = cm[CM_NOTSAVED]->history.action_index.count(
+				boost::make_tuple( pDoc, prevIndex ) );
+
+			if ( nb_actions_at_index > 1 ) 
+				advance( cm[CM_NOTSAVED]->history.a_iter, ( nb_actions_at_index - 1 ) );
+
+			while ( cm[CM_NOTSAVED]->history.a_iter->_actionIndex == prevIndex ) {
+
+				//  Make what-ever modifications need to be made to keep current.
+				ActionHistory thisAction = *(cm[CM_NOTSAVED]->history.a_iter);
+				bool updated = false;
+
+				bool dbgWatch = false;
+				//  dbgstring: Action: {s1}:{s2} type: {s3} handle: {s4} line: {s5}
+				docAction_iter s0 = cm[CM_NOTSAVED]->history.a_iter;
+				int s1 = thisAction._actionIndex;
+				int s2 = thisAction._actionEntryID;
+				int s3 = thisAction._action;
+				int s4 = thisAction._actionHandle;
+				int s5 = thisAction._referenceIndex;
+
+				switch (thisAction._action)
+				{
+					case PLM_MARKERADD:
+					{
+						int tmpAH =  cm[CM_NOTSAVED]->tmpActionHandle;
+						::SendMessage( hView, SCI_MARKERDELETEHANDLE, thisAction._actionHandle, 0 );
+						thisAction._actionHandle = cm[CM_NOTSAVED]->tmpActionHandle--;
+						int tmpAH2 =  cm[CM_NOTSAVED]->tmpActionHandle;
+						updated = true;						
+
+						dbgWatch = true;
+						break;
+					}
+					case PLM_MARKERDELETE:
+					{
+						int markerID = ::SendMessage( hView, SCI_MARKERADD, thisAction._referenceIndex, cm[CM_NOTSAVED]->id );
+						thisAction._actionHandle = markerID;
+						updated = true;						
+
+						dbgWatch = true;
+						break;
+					}
+
+						dbgWatch = true;
+						break;
+
+					case PLM_MARKERFORWARD:
+						//  need to modify pointers?
+						dbgWatch = true;
+						break;
+
+					default:
+						//  there shouldn't be a time this is hit.
+						dbgWatch = true;
+						break;
+				}
+
+				//  Replace the current indexed action with thisAction.
+				if ( updated ) {
+					cm[CM_NOTSAVED]->history.action_index.replace(
+						cm[CM_NOTSAVED]->history.a_iter, thisAction );
+					//  Since replace will forward iterate.
+					//cm[CM_NOTSAVED]->history.a_iter--;
+				}
+				
+				//  Go to the next action.
+				if ( cm[CM_NOTSAVED]->history.a_iter == cm[CM_NOTSAVED]->history.action_index.begin() )
+					break;
+
+				cm[CM_NOTSAVED]->history.a_iter--;
 			}
-			else if ( scn->modificationType & ( SC_MOD_INSERTTEXT ) ) {
-				//  An redo of an insert is still an insert so we need to add/reset markers.
-			//	undoredo_InsertHandler(scn);
+		}
+		else {
+			// Nothing to do?
+			bool dbgStop = true;
+		}
+	}
+
+	//  Redo actions.
+	else if ( modFlags & ( SC_PERFORMED_REDO ) ) {
+		//  Redo Actions.
+		if ( cm[CM_NOTSAVED]->history.setTargetIndex( pDoc, currIndex ) ) {
+
+			int nb_actions_at_index = cm[CM_NOTSAVED]->history.action_index.count(
+				boost::make_tuple( pDoc, currIndex ) );
+
+			while ( cm[CM_NOTSAVED]->history.a_iter->_actionIndex == currIndex ) {
+
+				//  Make what-ever modifications need to be made to keep current.
+				ActionHistory thisAction = *(cm[CM_NOTSAVED]->history.a_iter);
+				bool updated = false;
+
+				bool dbgWatch = false;
+
+				//  dbgstring: Action: {s0} at {s1}:{s2} type: {s3} handle: {s4} line: {s5}
+				docAction_iter s0 = cm[CM_NOTSAVED]->history.a_iter;
+				int s1 = thisAction._actionIndex;
+				int s2 = thisAction._actionEntryID;
+				int s3 = thisAction._action;
+				int s4 = thisAction._actionHandle;
+				int s5 = thisAction._referenceIndex;
+
+
+				switch (thisAction._action)
+				{
+					case PLM_MARKERADD:
+					{
+						int markerID = ::SendMessage( hView, SCI_MARKERADD, thisAction._referenceIndex, cm[CM_NOTSAVED]->id );
+						thisAction._actionHandle = markerID;
+						updated = true;						
+
+						dbgWatch = true;
+						break;
+					}
+					case PLM_MARKERDELETE:
+					{
+						::SendMessage( hView, SCI_MARKERDELETEHANDLE, thisAction._actionHandle, 0 );
+						thisAction._actionHandle = cm[CM_NOTSAVED]->tmpActionHandle;
+						cm[CM_NOTSAVED]->tmpActionHandle--;
+						updated = true;						
+
+						dbgWatch = true;
+						break;
+					}
+
+					case PLM_MARKERFORWARD:
+						//  need to modify pointers?
+						dbgWatch = true;
+						break;
+
+					default:
+						//  there shouldn't be a time this is hit.
+						dbgWatch = true;
+						break;
+				}
+
+				//  Replace the current indexed action with thisAction.
+				if ( updated ) {
+					cm[CM_NOTSAVED]->history.action_index.replace(
+						cm[CM_NOTSAVED]->history.a_iter, thisAction );
+					//  Since replace will forward iterate.
+					//cm[CM_NOTSAVED]->history.a_iter--;
+				}
+				
+				//  Go to the next action.
+				if ( cm[CM_NOTSAVED]->history.a_iter == cm[CM_NOTSAVED]->history.action_index.end() )
+					break;
+
+				cm[CM_NOTSAVED]->history.a_iter++;
 			}
 		}
+		else {
+			// Nothing to do?
+			bool dbgStop = true;
+		}
+
+	}
+
+	//  New actions.
+	else {
+		//  Truncate existing history entries if needed.
+		if ( cm[CM_NOTSAVED]->history.setTargetIndex( pDoc, currIndex ) ) {
+			if (! prevWasBeforeDelete ) cm[CM_NOTSAVED]->history.truncateActions();
+		}
+		prevWasBeforeDelete = false;
+
+		//  Track removal of existing markers.
+		if ( modFlags & ( SC_MOD_BEFOREDELETE ) ) {
+			currLine = startLine;
+			int endLine = ::SendMessage( hView, SCI_LINEFROMPOSITION, ( scn->position + scn->length ), 0 );
+			if ( currLine <= endLine ) {
+				prevWasBeforeDelete = true;
+				do {
+					//  tmpActionHandle is a negative int that is used as a placeholder for deleted
+					//  marker handles.
+					if ( ::SendMessage( hView, SCI_MARKERGET, currLine, 0 & ( 1 << cm[CM_NOTSAVED]->id ) ) ) {
+						cm[CM_NOTSAVED]->tmpActionHandle--;
+						int dbgTmpActionHandle = cm[CM_NOTSAVED]->tmpActionHandle;
+						cm[CM_NOTSAVED]->history.insertAction_at_NextIndex( PLM_MARKERDELETE,
+								cm[CM_NOTSAVED]->tmpActionHandle, currLine, false );
+					}
+					currLine++;
+				} while ( currLine <= endLine );
+			}
+		}
+
+		//  Track new insertions.
+		else {
+			//  Send Scintilla the marker messages and store the action in the history tracker.
+			int markerHandle;
+			do {
+				//  Right now this happens for EVERY change, need a line to handle map!
+				markerHandle = ::SendMessage( hView, SCI_MARKERADD, currLine, cm[CM_NOTSAVED]->id );
+				cm[CM_NOTSAVED]->history.insertAction_at_CurrIndex(	PLM_MARKERADD, markerHandle, currLine, false );
+				cm[CM_NOTSAVED]->prevActionHandle = markerHandle;
+				cm[CM_NOTSAVED]->prevActionHandleRefIndex = currIndex;
+				currLine++;
+			} while ( currLine <= ( startLine + scn->linesAdded ) );
+		}
+
+	}
+
+
+
+//#if(0)
+	//  <--- Area for testing action counter --->
+	int actionCount = currIndex;
+
+	class ActionCounter : public Editor {
+	public:
+		using Editor::pdoc;
+	};
+	ActionCounter* ac = reinterpret_cast<ActionCounter *>(::GetWindowLongPtr( hView, 0));
+	Document* ac_pDoc = ac->pdoc;
+	//  Use a watch on ac_pDoc->cb.currentAction for Scintilla count.
+
+	//  ^^^^^^  end area for action counter testing
+//#endif
+
 }
 
 //  Alters the state of current Changes: Not Saved markers to Changes: Saved.
@@ -266,22 +585,25 @@ void jumpNextChange()
 //  Global display margin control
 void displayWithLineNumbers()
 {
-	int cmdId = npp_plugin::getCmdId( CMD_LINENUMBER );
-	::SendMessage(npp_plugin::hNpp(), NPPM_SETMENUITEMCHECK, cmdId, true);
+	//  Change the target
+	cm[CM_SAVED]->setTargetMarginMenuItem( MARGIN_LINENUMBER );
+	cm[CM_NOTSAVED]->setTargetMarginMenuItem( MARGIN_LINENUMBER );
 }
 
 //  Global display margin control
 void displayWithBookMarks()
 {
-	int cmdId = npp_plugin::getCmdId( CMD_BOOKMARK );
-	::SendMessage(npp_plugin::hNpp(), NPPM_SETMENUITEMCHECK, cmdId, true);
+	//  Change the target
+	cm[CM_SAVED]->setTargetMarginMenuItem( MARGIN_BOOKMARK );
+	cm[CM_NOTSAVED]->setTargetMarginMenuItem( MARGIN_BOOKMARK );
 }
 
 //  Global display margin control ( plugin margin )
 void displayInPluginMargin()
 {
-	int cmdId = npp_plugin::getCmdId( CMD_PLUGIN );
-	::SendMessage(npp_plugin::hNpp(), NPPM_SETMENUITEMCHECK, cmdId, true);
+	//  Change the target
+	cm[CM_SAVED]->setTargetMarginMenuItem( MARGIN_PLUGIN );
+	cm[CM_NOTSAVED]->setTargetMarginMenuItem( MARGIN_PLUGIN );
 }
 
 //  Global display margin control ( no margin )
@@ -289,15 +611,52 @@ void displayInPluginMargin()
 //  be displayed as line highlights.
 void displayAsHighlight()
 {
-	int cmdId = npp_plugin::getCmdId( CMD_HIGHLIGHT );
-	::SendMessage(npp_plugin::hNpp(), NPPM_SETMENUITEMCHECK, cmdId, true);
+	//  Change the target
+	cm[CM_SAVED]->setTargetMarginMenuItem( MARGIN_NONE );
+	cm[CM_NOTSAVED]->setTargetMarginMenuItem( MARGIN_NONE );
 }
 
-//  Clear marker history and disable change marker tracking.
+//  Clear marker history and disable change marker tracking and menu items.
 void disable()
 {
-	int cmdId = npp_plugin::getCmdId( CMD_DISABLE );
-	::SendMessage(npp_plugin::hNpp(), NPPM_SETMENUITEMCHECK, cmdId, true);
+	_doDisable = !_doDisable;
+
+	HMENU hMenu = (HMENU)( ::SendMessage( hNpp(), NPPM_GETMENUHANDLE, NPPPLUGINMENU, 0 ) );
+
+	for ( int menuItem = 1; menuItem < NB_MENU_COMMANDS; menuItem++ ) {
+		int cmdID = getCmdId( menuItem );
+
+		switch ( menuItem )
+		{
+		case CMD_DISABLE:
+			::SendMessage(npp_plugin::hNpp(), NPPM_SETMENUITEMCHECK, cmdID, _doDisable );
+			if ( _doDisable ) {
+				//  Remove Scintilla marker definitions.
+				mark::setMarkerAvailable( cm[CM_SAVED]->id );
+				mark::setMarkerAvailable( cm[CM_NOTSAVED]->id );
+
+				//  Cleanup the Change_Marks
+				delete cm[CM_SAVED];
+				delete cm[CM_NOTSAVED];
+
+				//  Store to config file value to xml
+				xml::setGUIConfigValue( TEXT("SciMarkers"), TEXT("trackUNDOREDO"), TEXT("false") );
+
+				//  TODO: add a way to clear out the xml
+
+			}
+			else {
+				//  Store to config file
+				xml::setGUIConfigValue( TEXT("SciMarkers"), TEXT("trackUNDOREDO"), TEXT("true") );
+
+				//  Re-initialize the plugin
+				initPlugin();
+			}
+			break;
+		default:
+			::EnableMenuItem( hMenu, cmdID, _doDisable );
+		}
+	}
 }
 
 

@@ -62,7 +62,8 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="$(NppIntDir)\tinystr $(NppIntDir)\tinyxml $(NppIntDir)\tinyxmlerror $(NppIntDir)\tinyxmlparser $(NppIntDir)\tinystrA $(NppIntDir)\tinyxmlA $(NppIntDir)\tinyxmlerrorA $(NppIntDir)\tinyxmlparserA"
+				AdditionalDependencies="tinystr.obj tinyxml.obj tinyxmlerror.obj tinyxmlparser.obj tinystrA.obj tinyxmlA.obj tinyxmlerrorA.obj tinyxmlparserA.obj CellBuffer.obj"
+				AdditionalLibraryDirectories="&quot;$(NppIntDir)&quot;;&quot;$(SciDbgIntDir)&quot;"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -127,7 +128,8 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="$(NppIntDir)\tinystr $(NppIntDir)\tinyxml $(NppIntDir)\tinyxmlerror $(NppIntDir)\tinyxmlparser $(NppIntDir)\tinystrA $(NppIntDir)\tinyxmlA $(NppIntDir)\tinyxmlerrorA $(NppIntDir)\tinyxmlparserA"
+				AdditionalDependencies="tinystr.obj tinyxml.obj tinyxmlerror.obj tinyxmlparser.obj tinystrA.obj tinyxmlA.obj tinyxmlerrorA.obj tinyxmlparserA.obj CellBuffer.obj"
+				AdditionalLibraryDirectories="&quot;$(NppIntDir)&quot;;&quot;$(SciRelIntDir)&quot;"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -191,8 +193,8 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="tinystr.obj tinyxml.obj tinyxmlerror.obj tinyxmlparser.obj tinystrA.obj tinyxmlA.obj tinyxmlerrorA.obj tinyxmlparserA.obj"
-				AdditionalLibraryDirectories="&quot;$(NppIntDir)&quot;"
+				AdditionalDependencies="tinystr.obj tinyxml.obj tinyxmlerror.obj tinyxmlparser.obj tinystrA.obj tinyxmlA.obj tinyxmlerrorA.obj tinyxmlparserA.obj CellBuffer.obj"
+				AdditionalLibraryDirectories="&quot;$(NppIntDir)&quot;;&quot;$(SciDbgIntDir)&quot;"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -257,7 +259,8 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="$(NppIntDir)\tinystr $(NppIntDir)\tinyxml $(NppIntDir)\tinyxmlerror $(NppIntDir)\tinyxmlparser $(NppIntDir)\tinystrA $(NppIntDir)\tinyxmlA $(NppIntDir)\tinyxmlerrorA $(NppIntDir)\tinyxmlparserA"
+				AdditionalDependencies="tinystr.obj tinyxml.obj tinyxmlerror.obj tinyxmlparser.obj tinystrA.obj tinyxmlA.obj tinyxmlerrorA.obj tinyxmlparserA.obj CellBuffer.obj"
+				AdditionalLibraryDirectories="&quot;$(NppIntDir)&quot;;&quot;$(SciRelIntDir)&quot;"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -285,15 +288,23 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\src\NppPlugin.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\src\NppPluginIface.cpp"
 				>
 			</File>
 			<File
+				RelativePath="..\src\NppPluginIface_ActionHistory.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\src\NppPluginIface_ActionIndex.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\src\NppPluginIface_CmdMap.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\src\NppPluginIface_DocTabMap.cpp"
 				>
 			</File>
 			<File
@@ -319,15 +330,23 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\src\NppPlugin.h"
-				>
-			</File>
-			<File
 				RelativePath="..\src\NppPluginIface.h"
 				>
 			</File>
 			<File
+				RelativePath="..\src\NppPluginIface_ActionHistory.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\NppPluginIface_ActionIndex.h"
+				>
+			</File>
+			<File
 				RelativePath="..\src\NppPluginIface_CmdMap.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\NppPluginIface_DocTabMap.h"
 				>
 			</File>
 			<File
@@ -353,10 +372,6 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 		</Filter>
-		<File
-			RelativePath="..\src\NppPlugin_Template.xml"
-			>
-		</File>
 		<File
 			RelativePath="..\src\project_notes.txt"
 			>

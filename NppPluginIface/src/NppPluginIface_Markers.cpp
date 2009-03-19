@@ -24,6 +24,7 @@
 //  <--- STL --->
 #include <string>
 #include <map>
+#include <unordered_map>
 #include <fstream>
 
 //  <--- Windows --->
@@ -40,6 +41,7 @@ namespace markers {
 
 int _availMarkResult[NB_MAX_PLUGINMARKERS];
 
+//  Requires communication with NppPlugin_SciMarkerSymbol.dll!
 //  Iterate through markers looking for available ones until the number of markers needed or
 //  NB_MAX_PLUGINMARKERS is reached.
 //  Returns array with values: -1 = hasn't been checked, 0 = not avail, 1 = avail
@@ -91,6 +93,25 @@ int * getAvailableMarkers( int nb_markers_needed )
 	return ( _availMarkResult );
 }
 
+//  Sends message to SciMarkerSymbols.dll to undefine a Scintilla marker for both Npp views and
+//  remove any existing markers from margins.
+void setMarkerAvailable( int markerNumber )
+{
+	namespace msg = npp_plugin::messages;
+
+	CommunicationInfo comm;
+	comm.internalMsg = msg::NPPP_MSG_MARKERUNDEFINE;
+	comm.srcModuleName = getModuleName()->c_str();
+	msg::info_MARKERSYMBOL _info( markerNumber , NULL );
+
+	for ( int currView = MAIN_VIEW; currView <= SUB_VIEW; currView++ ) {
+		_info.targetView = currView;
+		comm.info = &_info;
+		::SendMessage( hNpp(), NPPM_MSGTOPLUGIN, 
+				(WPARAM)TEXT("NppPlugin_SciMarkerSymbol.dll"), (LPARAM)&comm );
+	}
+}
+
 //  Converts a string representation of an Scintilla mark into the numeric value.
 int string2marker( tstring szMark )
 {
@@ -137,17 +158,18 @@ int string2marker( tstring szMark )
     return ( iter->second );
 }
 
+//  Converts a string representation of a Notepad++ margin into the numeric value. 
 int string2margin( tstring szMargin )
 {
 	static std::map<tstring, int> scmargin;
 
 	if ( scmargin.empty() ) {
-		scmargin[ TEXT("MARGIN_NONE") ] = -1;
-		scmargin[ TEXT("MARGIN_LINENUMBER") ] = 0;
-		scmargin[ TEXT("MARGIN_BOOKMARK") ] = 1;
-		scmargin[ TEXT("MARGIN_FOLD") ] = 2;
-		scmargin[ TEXT("MARGIN_RESERVED") ] = 3;
-		scmargin[ TEXT("MARGIN_PLUGIN") ] = 4;
+		scmargin[ TEXT("MARGIN_NONE") ] = MARGIN_NONE;
+		scmargin[ TEXT("MARGIN_LINENUMBER") ] = MARGIN_LINENUMBER;
+		scmargin[ TEXT("MARGIN_BOOKMARK") ] = MARGIN_BOOKMARK;
+		scmargin[ TEXT("MARGIN_FOLD") ] = MARGIN_FOLD;
+		scmargin[ TEXT("MARGIN_RESERVED") ] = MARGIN_RESERVED;
+		scmargin[ TEXT("MARGIN_PLUGIN") ] = MARGIN_PLUGIN;
 	}
 
 	std::map<tstring, int>::const_iterator iter = scmargin.find( szMargin );
@@ -159,40 +181,66 @@ int string2margin( tstring szMargin )
     return ( iter->second );
 }
 
-
-
-//  Increases or decreases the margins width by 'width' amount.
-//  Returns false if the markers target margin is not supported.
-bool Margin::adjustWidth( int width, int view )
+//  Returns the string representation of a Notepad++ margin enum
+//  Converts a string representation of a Notepad++ margin into the numeric value. 
+tstring margin2string( int margin )
 {
-	if ( _target == MARGIN_NONE || _target == MARGIN_LINENUMBER ) return ( false );
+	static std::map<int, tstring> scmarginstrings;
 
-	//  Store the size information and set the new size information
-	_widthOrig = ::SendMessage( svp[view]->_hView, SCI_GETMARGINWIDTHN, _target, 0);
-	_widthSetByPlugin = _widthOrig + width;
+	if ( scmarginstrings.empty() ) {
+		scmarginstrings[ MARGIN_NONE ] = TEXT("MARGIN_NONE");
+		scmarginstrings[ MARGIN_LINENUMBER ] = TEXT("MARGIN_LINENUMBER");
+		scmarginstrings[ MARGIN_BOOKMARK ] = TEXT("MARGIN_BOOKMARK");
+		scmarginstrings[ MARGIN_FOLD ] = TEXT("MARGIN_FOLD");
+		scmarginstrings[ MARGIN_RESERVED ] = TEXT("MARGIN_RESERVED");
+		scmarginstrings[ MARGIN_PLUGIN ] = TEXT("MARGIN_PLUGIN");
+	}
 
-	::SendMessage( svp[view]->_hView, SCI_SETMARGINWIDTHN, _target, _widthSetByPlugin );
+	std::map<int, tstring>::const_iterator iter = scmarginstrings.find( margin );
 
-	return ( true );
+	if( iter == scmarginstrings.end() ) {
+		return NULL;
+	}
+
+    return ( iter->second );
 }
 
-//  Restore the margin width to what it was when set.  If it has changed since being set
-//  remove the size this plugin added/removed.
-void Margin::restoreWidth( int view )
+//  Sets the margin this plugin's markers will be shown in by setting the target margin and
+//  setting the mask on markers so the marker will be properly assigned.
+void Margin::setTarget( MARGIN target, int markerID )
 {
-	if ( _target == MARGIN_NONE || _target == MARGIN_LINENUMBER ) return;
-
-	_widthCurrent = ::SendMessage( svp[view]->_hView, SCI_GETMARGINWIDTHN, _target, 0 );
+	if ( (target == MARGIN_FOLD) || (target == MARGIN_RESERVED) ) return;
 	
-	//  Some other plugin or N++ may have reset the size already.  In that case, don't
-	// change it again.
-	if (! ( _widthCurrent == _widthOrig ) || ( _widthCurrent < _widthSetByPlugin ) ) {
+	_prevTarget = _target;
+	_target = target;
 
-		// Otherwise remove the width we added from the existing width.
-		int tmpWidth = ( ( _widthCurrent - _widthSetByPlugin ) + _widthOrig );
-		::SendMessage( svp[view]->_hView, SCI_SETMARGINWIDTHN, _target, tmpWidth );
+	setMasks ( markerID );
+}
+
+//  Sets the mask for all margins in both views so the marker is on the target margin.
+void Margin::setMasks( int markerID )
+{
+	int markerMask = ( 1 << markerID );
+	int tmpMask = 0;
+
+	for ( int currView = MAIN_VIEW; currView <= SUB_VIEW; currView++ ) {
+		for ( int i = 0; i < NB_MARGINS; i++ ) {
+			tmpMask = ::SendMessage( hViewByInt(currView), SCI_GETMARGINMASKN, i, 0 );
+			if ( i == _target ) {
+				// set mask to include marker
+				tmpMask |= markerMask;
+			}
+			else {
+				// set mask to exclude marker
+				tmpMask &= ~markerMask;
+			}
+			::SendMessage( hViewByInt(currView), SCI_SETMARGINMASKN, i, tmpMask );
+		}
 	}
 }
+
+//  Unsets the mask for all margins in both views so the marker is on the previous target margin.
+void Margin::restorePrevTarget( int markerID ) { setTarget( _prevTarget, markerID ); }
 
 //  Initializes Notepad++ and Scintilla to be able to use the markers from information set from
 //  the xml configuration data.
@@ -202,7 +250,7 @@ void Plugin_Line_Marker::init( int markNum )
 
 	if ( type == SC_MARK_PIXMAP && pXpmFields.empty() ) {
 		if ( xpmFileName.empty() ) type = 0; // Same default as Scintilla
-		else if (! readXpmDataFile() ) type = 0;
+		else if (! getXpmDataFile() ) type = 0;
 	}
 
 	// Calculate and assign an alpha blend based on the background color.
@@ -217,20 +265,21 @@ void Plugin_Line_Marker::init( int markNum )
 	}
 	
 	for ( int currView = MAIN_VIEW; currView <= SUB_VIEW; currView++ ) {
+		HWND hView = npp_plugin::hViewByInt( currView );
 		if ( type == SC_MARK_PIXMAP ) {
-			SendMessage( margin.svp[currView]->_hView, SCI_MARKERDEFINEPIXMAP, id, (LPARAM)getXpmData() );
+			SendMessage( hView, SCI_MARKERDEFINEPIXMAP, id, (LPARAM)getXpmData() );
 		}
 		else {
-			SendMessage( margin.svp[currView]->_hView, SCI_MARKERDEFINE, id, type );
+			SendMessage( hView, SCI_MARKERDEFINE, id, type );
 		}
-		SendMessage( margin.svp[currView]->_hView, SCI_MARKERSETFORE, id, fore);
-		SendMessage( margin.svp[currView]->_hView, SCI_MARKERSETBACK, id, back);
-		SendMessage( margin.svp[currView]->_hView, SCI_MARKERSETALPHA, id, alpha);
+		SendMessage( hView, SCI_MARKERSETFORE, id, fore);
+		SendMessage( hView, SCI_MARKERSETBACK, id, back);
+		SendMessage( hView, SCI_MARKERSETALPHA, id, alpha);
 	}
 }
 
-//  Read XPM data from a .xpm file.
-bool Plugin_Line_Marker::readXpmDataFile()
+//  Gets the file pointer for the XPM data from a .xpm file in the ..config\icons\ directory.
+bool Plugin_Line_Marker::getXpmDataFile()
 {
 	//  Before defining the marker see about getting the xpm data (if needed)
 
@@ -261,13 +310,13 @@ bool Plugin_Line_Marker::readXpmDataFile()
 		}
 	}
 
-	if(! XpmReadFileToBuffer( filePath ) ) return ( false );
+	if(! XpmFile2Buffer( filePath ) ) return ( false );
 
 	return ( true );
 }
 
-
-int Plugin_Line_Marker::XpmReadFileToBuffer( TCHAR filename[MAX_PATH] )
+//  Reads the XPM text fields to a vector for later transmission to Scintilla.
+int Plugin_Line_Marker::XpmFile2Buffer( TCHAR filename[MAX_PATH] )
 {
 	std::fstream xpmFile(filename);
 	std::string tmpXpmBuff;
@@ -296,13 +345,8 @@ int Plugin_Line_Marker::XpmReadFileToBuffer( TCHAR filename[MAX_PATH] )
     return ( !xpmFile.fail() );
 }
 
-
-const char** Plugin_Line_Marker::getXpmData()
-{
-	const char ** test = &pXpmFields[0];
-
-	return ( &pXpmFields[0] );
-}
+//  Returns the pointer array to the XPM data to send to Scintilla.
+const char** Plugin_Line_Marker::getXpmData() { return ( &pXpmFields[0] ); }
 
 } //  End namespace: marker
 

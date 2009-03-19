@@ -1,0 +1,38 @@
+-->  When needing to debug beNotified messages and buffer/document settings this what was used:
+//  Simply uncomment the #define, put a 'when hit' output message on the case being debugged
+//  and start watching the output.
+
+//#define MSG_DEBUGGING
+#ifdef MSG_DEBUGGING
+	npp_plugin::hCurrViewNeedsUpdate();
+	HWND hView = reinterpret_cast<HWND>(notifyCode->nmhdr.hwndFrom);
+	tstring ViewName;
+	if ( hView == hMainView() ) ViewName.assign( TEXT("MAIN_VIEW") );
+	else if ( hView == hSecondView() ) ViewName.assign( TEXT("SUB_VIEW") );
+	else if ( hView == hNpp() ) ViewName.assign( TEXT("Notepad++") );
+	else ViewName.assign( TEXT("NON_VIEW") );  // ie: Find/Replace
+
+	uptr_t idFrom = notifyCode->nmhdr.idFrom;
+	int idPos = ::SendMessage( hNpp(), NPPM_GETPOSFROMBUFFERID, idFrom, 0);
+	int idPos1 = idPos >> 30;
+	int idPos2 = idPos & 0xdf;
+	int bufferID = ::SendMessage( hView, NPPM_GETCURRENTBUFFERID, 0, 0);
+	static int mvFocusedBuffID = 0;
+	static int svFocusedBuffID = 0;
+	int buffPos = ::SendMessage( hNpp(), NPPM_GETPOSFROMBUFFERID, bufferID, 0);
+	int buffPos1 = buffPos >> 30;
+	int buffPos2 = buffPos & 0xdf;
+	int msg = notifyCode->nmhdr.code;
+	int pDoc = (LRESULT)::SendMessage( hView, SCI_GETDOCPOINTER, 0, 0);
+	int mvPDoc = (LRESULT)::SendMessage( hMainView(), SCI_GETDOCPOINTER, 0, 0);
+	static int mvFocusedPDoc = 0;
+	int svPDoc = (LRESULT)::SendMessage( hSecondView(), SCI_GETDOCPOINTER, 0, 0);
+	static int svFocusedPDoc = 0;
+	int flags = notifyCode->modificationType;
+	TCHAR flagHEX[65];
+	::_itot(flags, flagHEX, 16);
+	TCHAR flag2[65];
+	::_itot(flags, flag2, 2);
+	// Breakpoint string:
+	// {msg} {ViewName} idFrom:{idFrom}:[{idPos1}]:[{idPos2}] buffID:{bufferID}:[{buffPos1}]:[{buffPos2}] Doc:(curr){pDoc}|mv[{mvPDoc}]|sv[{svPDoc}] flags:({flags}):({flagHEX}):({flag2})
+#endif

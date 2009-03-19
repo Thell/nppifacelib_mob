@@ -55,9 +55,9 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD reasonForCall, LPVOID /*lpReserved*/
 		setPluginFuncItem(TEXT("Jump: Prev Change"), p_cm::jumpPrevChange,p_cm::CMD_JUMPPREV);
 		setPluginFuncItem(TEXT("Jump: Next Change"), p_cm::jumpNextChange,p_cm::CMD_JUMPNEXT);
 		setPluginFuncItem(TEXT(""), NULL);	//  A separator line.
-		setPluginFuncItem(TEXT("Display: With Line Numbers"), p_cm::displayWithLineNumbers, p_cm::CMD_LINENUMBER , true);
-		setPluginFuncItem(TEXT("Display: With Bookmarks"), p_cm::displayWithBookMarks, p_cm::CMD_BOOKMARK, true);
-		setPluginFuncItem(TEXT("Display: Left of Line Text"), p_cm::displayInPluginMargin, p_cm::CMD_PLUGIN, true);
+		setPluginFuncItem(TEXT("Display: Line Number Margin"), p_cm::displayWithLineNumbers, p_cm::CMD_LINENUMBER , true);
+		setPluginFuncItem(TEXT("Display: Bookmark Margin"), p_cm::displayWithBookMarks, p_cm::CMD_BOOKMARK, true);
+		setPluginFuncItem(TEXT("Display: Plugin Marker Margin"), p_cm::displayInPluginMargin, p_cm::CMD_PLUGIN, true);
 		setPluginFuncItem(TEXT("Display: As Line Highlight"), p_cm::displayAsHighlight, p_cm::CMD_HIGHLIGHT, true);
 		setPluginFuncItem(TEXT(""), NULL);	//  A separator line.
 		setPluginFuncItem(TEXT("Disable"), p_cm::disable, p_cm::CMD_DISABLE, true);
@@ -125,16 +125,57 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 	 */
 	using namespace npp_plugin;
 
+//#define MSG_DEBUGGING
+#ifdef MSG_DEBUGGING
+	npp_plugin::hCurrViewNeedsUpdate();
+	HWND hView = reinterpret_cast<HWND>(notifyCode->nmhdr.hwndFrom);
+	tstring ViewName;
+	if ( hView == hMainView() ) ViewName.assign( TEXT("MAIN_VIEW") );
+	else if ( hView == hSecondView() ) ViewName.assign( TEXT("SUB_VIEW") );
+	else if ( hView == hNpp() ) ViewName.assign( TEXT("Notepad++") );
+	else ViewName.assign( TEXT("NON_VIEW") );  // ie: Find/Replace
+
+	uptr_t idFrom = notifyCode->nmhdr.idFrom;
+	int idPos = ::SendMessage( hNpp(), NPPM_GETPOSFROMBUFFERID, idFrom, 0);
+	int idPos1 = idPos >> 30;
+	int idPos2 = idPos & 0xdf;
+	int bufferID = ::SendMessage( hView, NPPM_GETCURRENTBUFFERID, 0, 0);
+	static int mvFocusedBuffID = 0;
+	static int svFocusedBuffID = 0;
+	int buffPos = ::SendMessage( hNpp(), NPPM_GETPOSFROMBUFFERID, bufferID, 0);
+	int buffPos1 = buffPos >> 30;
+	int buffPos2 = buffPos & 0xdf;
+	int msg = notifyCode->nmhdr.code;
+	int pDoc = (LRESULT)::SendMessage( hView, SCI_GETDOCPOINTER, 0, 0);
+	int mvPDoc = (LRESULT)::SendMessage( hMainView(), SCI_GETDOCPOINTER, 0, 0);
+	static int mvFocusedPDoc = 0;
+	int svPDoc = (LRESULT)::SendMessage( hSecondView(), SCI_GETDOCPOINTER, 0, 0);
+	static int svFocusedPDoc = 0;
+	int flags = notifyCode->modificationType;
+	TCHAR flagHEX[65];
+	::_itot(flags, flagHEX, 16);
+	TCHAR flag2[65];
+	::_itot(flags, flag2, 2);
+	// Breakpoint string:
+	// {msg} {ViewName} idFrom:{idFrom}:[{idPos1}]:[{idPos2}] buffID:{bufferID}:[{buffPos1}]:[{buffPos2}] Doc:(curr){pDoc}|mv[{mvPDoc}]|sv[{svPDoc}] flags:({flags}):({flagHEX}):({flag2})
+#endif
+	
 	switch (notifyCode->nmhdr.code) 
 	{
 	case SCN_MODIFIED:
-		if ( npp_plugin::isNppReady() ) p_cm::modificationHandler(notifyCode);
+		if ( npp_plugin::isNppReady() ) {
+			if ( ( notifyCode->modificationType & ( SC_MOD_INSERTTEXT | SC_MOD_DELETETEXT ) ) ||
+				( notifyCode->modificationType & ( SC_MOD_BEFOREDELETE ) ) ) {
+				npp_plugin::hCurrViewNeedsUpdate();
+				p_cm::modificationHandler(notifyCode);
+			}
+		}
+		break;
 
 	case NPPN_READY:
 		npp_plugin::setNppReady();
 		npp_plugin::hCurrViewNeedsUpdate();
-		
-
+		npp_plugin::doctabmap::update_DocTabMap();
 		break;
 
 	case NPPN_TBMODIFICATION:
@@ -143,6 +184,21 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 
 	case NPPN_WORDSTYLESUPDATED:
 		p_cm::wordStylesUpdatedHandler();
+		break;
+
+	case NPPN_BUFFERACTIVATED:
+		if ( isNppReady() ) {
+			npp_plugin::hCurrViewNeedsUpdate();
+			npp_plugin::doctabmap::update_DocTabMap();
+		}
+		break;
+
+	case NPPN_FILEBEFOREOPEN:
+		npp_plugin::hCurrViewNeedsUpdate();
+		break;
+
+	case NPPN_FILEOPENED:
+		npp_plugin::hCurrViewNeedsUpdate();
 		break;
 
 	case NPPN_FILESAVED:
@@ -196,13 +252,6 @@ extern "C" __declspec(dllexport) LRESULT messageProc(UINT Message, WPARAM wParam
 			switch ( comm->internalMsg )
 			{
 
-				case msg::NPPP_RMSG_MARKERSYMBOL:
-				{
-					//msg::info_MARKERSYMBOL* _info = reinterpret_cast<msg::info_MARKERSYMBOL *>( comm->info );
-					//mark::_gotMarkerTypeReply( _info->markerNumber, _info->markerSymbol, _info->targetView );
-				break;
-				}
-
 				default:
 					break;
 
@@ -212,11 +261,6 @@ extern "C" __declspec(dllexport) LRESULT messageProc(UINT Message, WPARAM wParam
 		break;
 		}
 		
-		//  <--- Internal Plugin Messages --->
-		case msg::NPPP_RMSG_MARKERGETAVAIL:
-			p_cm::initMarker( (int*)lParam );
-			break;
-
 		default:
 			return false;
 

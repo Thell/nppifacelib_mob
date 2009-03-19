@@ -156,7 +156,7 @@ extern "C" __declspec(dllexport) LRESULT messageProc(UINT Message, WPARAM wParam
 	 */
 
 	using namespace npp_plugin;
-	namespace pmsg = npp_plugin::messages;
+	namespace msg = npp_plugin::messages;
 
 	// ===>  Include optional messaging handlers here.
 	switch (Message)
@@ -169,14 +169,16 @@ extern "C" __declspec(dllexport) LRESULT messageProc(UINT Message, WPARAM wParam
 			
 			switch ( comm->internalMsg )
 			{
-				case pmsg::NPPP_MSG_MARKERSYMBOL:
+				case msg::NPPP_MSG_MARKERSYMBOL:
 				{
-					pmsg::info_MARKERSYMBOL* _info = reinterpret_cast<pmsg::info_MARKERSYMBOL *>(comm->info);
+					msg::info_MARKERSYMBOL* _info = reinterpret_cast<msg::info_MARKERSYMBOL *>(comm->info);
 					_info->markerSymbol = p_sms::MARKERSYMBOL( _info->markerNumber, _info->targetView );
-					//tstring destModule = comm->srcModuleName;
-					//comm->srcModuleName = npp_plugin::getModuleName().c_str();
-					//comm->internalMsg = pmsg::NPPP_RMSG_MARKERSYMBOL;
-					//SendMessage( hNpp(), NPPM_MSGTOPLUGIN, (WPARAM)destModule.c_str(), (LPARAM)comm );
+				break;
+				}
+				case msg::NPPP_MSG_MARKERUNDEFINE:
+				{
+					msg::info_MARKERSYMBOL* _info = reinterpret_cast<msg::info_MARKERSYMBOL *>(comm->info);
+					p_sms::MARKERUNDEFINE( _info->markerNumber, _info->targetView );
 				break;
 				}
 

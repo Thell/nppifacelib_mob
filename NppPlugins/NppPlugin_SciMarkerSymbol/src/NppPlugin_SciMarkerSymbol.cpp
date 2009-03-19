@@ -57,4 +57,24 @@ int MARKERSYMBOL(int markerNumber, unsigned int targetView)
 	return ( markType );
 }
 
+//  Reset a marker definition back to default values, and delete marker from margin.
+void MARKERUNDEFINE( int markerNumber, unsigned int targetView)
+{
+	if ( (markerNumber > npp_plugin::markers::NB_MAX_PLUGINMARKERS) || (markerNumber < 0) ||
+		(targetView > SUB_VIEW) ) return;
+
+	HWND hView = npp_plugin::hViewByInt( targetView );
+	LineMarker em;							//  Empty mark to copy from.
+
+	//  Remove existing marker in margin
+	::SendMessage( hView, SCI_MARKERDELETEALL, markerNumber, 0 );
+
+	//  Since PIXMAP definitions are sent as pointers to Scintilla the calling plugin is
+	//  reponsible to clear thos.
+	::SendMessage( hView, SCI_MARKERDEFINE, markerNumber, em.markType );
+	::SendMessage( hView, SCI_MARKERSETFORE, markerNumber, em.fore.allocated.AsLong() );
+	::SendMessage( hView, SCI_MARKERSETBACK, markerNumber, em.back.allocated.AsLong() );
+	::SendMessage( hView, SCI_MARKERSETALPHA, markerNumber, em.alpha );
+}
+
 } //  End namespace: npp_plugin_scimarkersymbol

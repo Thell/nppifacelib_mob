@@ -13,8 +13,6 @@
         </LexerType>
     </LexerStyles>
     <GUIConfigs>
-        <GUIConfig name="MAIN_VIEW" pluginMargin="show" />
-        <GUIConfig name="SUB_VIEW" pluginMargin="show" />
         <GUIConfig name="SciMarkers" trackUNDOREDO="true" active="true" display="false" margin="MARGIN_PLUGIN" />
         <!-- MANUAL EDITING: -->
         <!-- markType matches mark types for Scintilla markers-->

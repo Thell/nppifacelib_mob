@@ -85,6 +85,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="IF NOT EXIST $(PluginConfigDir) MKDIR $(PluginConfigDir)&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)($TargetName).xml COPY $(ProjectDir)..\src\$(TargetName).xml $(PluginConfigDir)$(TargetName).xml&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)\icons\ MKDIR $(PluginConfigDir)\icons\&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)\icons\cm_saved.xpm COPY $(ProjectDir)..\src\cm_saved.xpm $(PluginConfigDir)\icons\cm_saved.xpm&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)\icons\cm_notsaved.xpm COPY $(ProjectDir)..\src\cm_notsaved.xpm $(PluginConfigDir)\icons\cm_notsaved.xpm"
 			/>
 		</Configuration>
 		<Configuration
@@ -159,6 +160,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="IF NOT EXIST $(PluginConfigDir) MKDIR $(PluginConfigDir)&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)($TargetName).xml COPY $(ProjectDir)..\src\$(TargetName).xml $(PluginConfigDir)$(TargetName).xml&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)\icons\ MKDIR $(PluginConfigDir)\icons\&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)\icons\cm_saved.xpm COPY $(ProjectDir)..\src\cm_saved.xpm $(PluginConfigDir)\icons\cm_saved.xpm&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)\icons\cm_notsaved.xpm COPY $(ProjectDir)..\src\cm_notsaved.xpm $(PluginConfigDir)\icons\cm_notsaved.xpm"
 			/>
 		</Configuration>
 		<Configuration
@@ -230,6 +232,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="IF NOT EXIST $(PluginConfigDir) MKDIR $(PluginConfigDir)&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)($TargetName).xml COPY $(ProjectDir)..\src\$(TargetName).xml $(PluginConfigDir)$(TargetName).xml&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)\icons\ MKDIR $(PluginConfigDir)\icons\&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)\icons\cm_saved.xpm COPY $(ProjectDir)..\src\cm_saved.xpm $(PluginConfigDir)\icons\cm_saved.xpm&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)\icons\cm_notsaved.xpm COPY $(ProjectDir)..\src\cm_notsaved.xpm $(PluginConfigDir)\icons\cm_notsaved.xpm"
 			/>
 		</Configuration>
 		<Configuration
@@ -304,6 +307,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="IF NOT EXIST $(PluginConfigDir) MKDIR $(PluginConfigDir)&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)($TargetName).xml COPY $(ProjectDir)..\src\$(TargetName).xml $(PluginConfigDir)$(TargetName).xml&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)\icons\ MKDIR $(PluginConfigDir)\icons\&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)\icons\cm_saved.xpm COPY $(ProjectDir)..\src\cm_saved.xpm $(PluginConfigDir)\icons\cm_saved.xpm&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)\icons\cm_notsaved.xpm COPY $(ProjectDir)..\src\cm_notsaved.xpm $(PluginConfigDir)\icons\cm_notsaved.xpm"
 			/>
 		</Configuration>
 	</Configurations>

@@ -26,7 +26,7 @@
 
 /*
  *  This file is a common file that defines inter plugin messages, using 'const unsigned int'
- *  instead of a global #define macro.  Add more to this file and post back the Notepad++
+ *  instead of a global #define macro.  Add more to this file and post back to the Notepad++
  *  Plugin Interface Lib thread at:
  *    *****  Place thread pointer here *****
  *
@@ -58,9 +58,9 @@ namespace messages {
 const int NPPP_MSG = ( NPPMSG + 10000 );
 const int NPPP_RMSG = ( NPPMSG + 11000 );
 
-//  <---  NppPlugin_SciMarkerSymbol messages --->
+//  <---  NppPlugin_SciMarkerSymbol.dll messages --->
 const int NPPP_MSG_MARKERSYMBOL = ( NPPP_MSG + 1 );
-const int NPPP_RMSG_MARKERSYMBOL = ( NPPP_RMSG + 1 );
+const int NPPP_MSG_MARKERUNDEFINE = ( NPPP_MSG + 2);
 
 	//  MSG_MARKERSYMBOL info structure.
 	struct info_MARKERSYMBOL {
@@ -70,37 +70,6 @@ const int NPPP_RMSG_MARKERSYMBOL = ( NPPP_RMSG + 1 );
 		info_MARKERSYMBOL( int markerNumber, int targetView )
 			:markerNumber(markerNumber), targetView(targetView), markerSymbol(-1){};
 	};
-
-//  Internal plugin interface reply message for getAvailableMarkers.  No comm struct needed.
-//  LPARAM is an available markerID array, if all values are -1 there aren't enough available
-//  markers.
-const int NPPP_RMSG_GETAVAILABLEMARKERS = ( NPPP_RMSG + 2 );
-
-
-//  <---  NppPlugin_MARKHELPER messages.  --->
-const int NPPP_MSG_MARK = ( NPPP_MSG + 100 );
-
-//  Checks both N++ Views for: markerNumber < undefined_marker < NB_MAX_PLUGINMARKERS.
-const int NPPP_MSG_MARKERGETAVAIL = NPPP_MSG_MARK + 1;
-//  Reply message: markerNumber or -1 if no marker available.
-const int NPPP_RMSG_MARKERGETAVAIL = NPPP_MSG_MARK + 2;
-
-		//  NPPP_MSG_MARKERGETAVAIL info structure.
-		struct info_MARKERGETAVAIL {
-			int markerNumber;
-			info_MARKERGETAVAIL(int markerNumber = -1):markerNumber(markerNumber){};
-		};
-
-//  Restores a Scintilla marker to default values.  No reply message is sent.
-const int NPPP_MSG_MARKERSETAVAIL = NPPP_MSG_MARK + 3;
-
-		//  NPPP_MSG_MARKSETAVAIL info structure.
-		struct info_MARKERSETAVAIL {
-			int markerNumber;
-			info_MARKERSETAVAIL(int markerNumber):markerNumber(markerNumber){};
-		};
-
-
 
 }  //  End namespace: messages
 

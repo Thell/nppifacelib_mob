@@ -1,4 +1,4 @@
-/* NppPluginIface_CmdMap.h
+/* NppPluginIface_CmdMap.cpp
  *
  * This file is part of the Notepad++ Plugin Interface Lib.
  * Copyright 2008 - 2009 Thell Fowler (thell@almostautomated.com)
@@ -28,7 +28,7 @@
 
 namespace npp_plugin {
 
-//  Unnamed namespace for private variabel and functions.
+//  Unnamed namespace for private variable and functions.
 namespace {
 
 std::tr1::unordered_map<int, FuncItem*> _cmdIdMap;
