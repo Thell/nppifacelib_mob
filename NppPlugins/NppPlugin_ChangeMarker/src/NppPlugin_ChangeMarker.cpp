@@ -18,38 +18,44 @@
 //  Change Marker Plugin for use with Notepad++.
 
 #include "NppPlugin_ChangeMarker.h"
-#include <unordered_map>
 #include <vector>
+#include <set>
 
-//  <--- headers for testing actioncounter --->
-#include "Platform.h"
-#include "UniConversion.h"
-#include "Indicator.h"
-#include "XPM.h"
-#include "LineMarker.h"
-#include "Style.h"
-#include "ViewStyle.h"
-#include "SplitVector.h"
-#include "Partitioning.h"
-#include "RunStyles.h"
-#include "Decoration.h"
-#include "CharClassify.h"
-#include "CellBuffer.h"
-#include "Document.h"
-#include "PositionCache.h"
-#include "KeyMap.h"
-#include "ContractionState.h"
+#ifdef _DEBUG
+	//  <--- headers for testing actioncounter --->
+	#include "Platform.h"
+	#include "UniConversion.h"
+	#include "Indicator.h"
+	#include "XPM.h"
+	#include "LineMarker.h"
+	#include "Style.h"
+	#include "ViewStyle.h"
+	#include "SplitVector.h"
+	#include "Partitioning.h"
+	#include "RunStyles.h"
+	#include "Decoration.h"
+	#include "CharClassify.h"
+	#include "CellBuffer.h"
+	#include "Document.h"
+#endif
 
-//  Easier to just add this here than include other files.
-struct RangeToFormat {
-	HDC hdc;
-	HDC hdcTarget;
-	RECT rc;
-	RECT rcPage;
-	CharacterRange chrg;
-};
+#if(0)
+	//  Additional includes for testing editor.
+	#include "PositionCache.h"
+	#include "KeyMap.h"
+	#include "ContractionState.h"
 
-#include "Editor.h"
+	//  Easier to just add this here than include other files.
+	struct RangeToFormat {
+		HDC hdc;
+		HDC hdcTarget;
+		RECT rc;
+		RECT rcPage;
+		CharacterRange chrg;
+	};
+
+	#include "Editor.h"
+#endif
 
 //  ^^^^  End headers for testing action counter.
 
@@ -58,11 +64,14 @@ namespace npp_plugin_changemarker {
 using namespace npp_plugin;
 namespace xml = npp_plugin::xmlconfig;
 namespace mark = npp_plugin::markers;
-namespace a_index = npp_plugin::actionindex;
-namespace a_history = npp_plugin::actionhistory;
 
-Change_Mark* cm[NB_CHANGEMARKERS];
+//  Namespace public static variables.
 bool _doDisable = false;
+Change_Mark* cm[NB_CHANGEMARKERS];
+typedef std::set<int> ChangedDocs_Set;
+ChangedDocs_Set _doc_set;
+ChangedDocs_Set _doc_disabled_set;
+std::tr1::unordered_map<int, ChangedDocument*> _doc_map;
 
 //  Set both markers target margin for, set menu item checks, and save to config file.
 void Change_Mark::setTargetMarginMenuItem( MARGIN target )
@@ -126,6 +135,538 @@ void Change_Mark::resetOverride()
 	this->init( this->id );
 }
 
+//  Inserts lines into the line map and renames the keys for existing lines below the point of
+//  insertion.
+void CM_LineMap::insertLines(int startLine, int nb_lines)
+{
+	//  See if there are any lines below the insertion point that need to be altered.
+	if (! ( _lines.lower_bound(startLine) == _lines.end() ) ) {
+		line_map  tmpLines;
+
+		//  Copy the original lines that are above the target pos.
+		tmpLines.insert(_lines.begin(), _lines.upper_bound( startLine - 1 ) );
+
+		//  Copy the remaining original lines while increasing their line numbers (the key).
+		line_map::iterator pos;
+		for ( pos = _lines.lower_bound(startLine); pos != _lines.end(); ++pos ) {
+			tmpLines[ (pos->first + nb_lines ) ] = pos->second;
+		}
+
+		_lines.swap( tmpLines );
+	}
+}
+
+//  Deletes line from the line map and renames the keys for existing lines below the point of
+//  deletion.
+void CM_LineMap::deleteLines( int startLine, int nb_lines )
+{
+	//  See if there are any lines below the deletion point that need to be altered.
+	if (! ( _lines.lower_bound(startLine) == _lines.end() ) ) {
+		line_map  tmpLines;
+
+		//  Copy the original lines that are above the target pos.
+		tmpLines.insert(_lines.begin(), _lines.upper_bound( startLine - 1 ) );
+
+		//  Copy the remaining lines that are below the last line deleted while decreasing
+		//  their line numbers.
+		line_map::iterator pos;
+		for ( pos = _lines.lower_bound(startLine + nb_lines); pos != _lines.end(); ++pos ) {
+			tmpLines[ (pos->first - nb_lines ) ] = pos->second;
+		}
+
+		_lines.swap( tmpLines );
+	}
+}
+
+//  Inserts a handle for marker into the handle map for the line.
+void CM_LineMap::addHandleToLine( int line, int marker, int handle )
+{
+	handle_map* hm = &( _lines[line] );
+	hm->insert( std::make_pair( marker, handle ) );
+
+	if ( handle > currMaxMarkerHandle ) currMaxMarkerHandle = handle;
+
+}
+
+//  Removes a marker handle from the handle map for the line.
+void CM_LineMap::deleteHandleFromLine(int line, int marker, int handle)
+{
+	handle_map* hm = &( _lines[line] );
+
+	//  There should only ever be one elem for handle, but just in case.
+	for( hm_pos pos = hm->find(marker); pos != hm->end(); ) {
+		if ( pos->second == handle ) {
+			hm->erase( pos++ );
+		}
+		else {
+			++pos;
+		}
+	}
+}
+
+//  Modifies a handle for the marker in the handle map for the line.
+void CM_LineMap::modifyHandleOnLine(int line, int marker, int oldHandle, int newHandle)
+{
+	handle_map* hm = &( _lines[line] );
+	hm_range range = hm->equal_range(marker);
+
+	for( hm_pos pos = range.first; pos != range.second; ++pos ) {
+		if ( pos->second == oldHandle ) {
+			pos->second = newHandle;
+			if ( newHandle > currMaxMarkerHandle ) currMaxMarkerHandle = newHandle;
+		}
+	}
+}
+
+//  Returns the most recently created handle for marker on line.
+int CM_LineMap::getHandleFromLine( int line, int marker )
+{
+	handle_map* hm = &( _lines[line] );
+	hm_range range = hm->equal_range(marker);
+	int markerHandle = 0;
+
+	for ( hm_pos pos = range.first; pos != range.second; ++pos ) {
+		markerHandle = pos->second;
+	}
+
+	return ( markerHandle );
+}
+
+//  Returns the internal Line_Map line for handle.
+int CM_LineMap::getLineFromHandle( int marker, int handle )
+{
+	handle_map* hm;
+	for ( lm_pos lpos = _lines.begin(); lpos != _lines.end(); ++lpos ) {
+		hm = &( lpos->second );
+		for ( hm_pos hpos = hm->begin(); hpos != hm->end(); ++ hpos ) {
+			if ( ( hpos->first == marker ) && ( hpos->second == handle ) ) {
+				return ( lpos->first );
+				break;
+			}
+		}
+	}
+	return ( -1 );
+}
+
+//  Sends Scintilla the message to add a marker and adds the handle to the internal line map.
+//  Returns the new handle.
+int ChangedDocument::addMarker( int line, int marker )
+{
+	int markerHandle = ::SendMessage( hView, SCI_MARKERADD, line, marker );
+	lm.addHandleToLine( line, marker, markerHandle );
+	return ( markerHandle );
+}
+
+//  Sends Scintilla the message to delete a marker by handle, deletes the handle from the
+//  internal line map and returns the handle.
+int ChangedDocument::deleteMarker( int line, int marker, int handle )
+{
+	int oldHandle = lm.getHandleFromLine( line, marker );
+	if ( ( handle ) && ( oldHandle != handle ) ) {
+		int sciLine = ::SendMessage( hView, SCI_MARKERLINEFROMHANDLE, handle, 0 );
+		if ( line != sciLine ) {
+			//  Find the internal line the handle is on.
+			int lmLine = lm.getLineFromHandle( marker, handle );
+			bool dbgStop = true;
+		}
+	}
+	::SendMessage( hView, SCI_MARKERDELETEHANDLE, oldHandle, 0 );
+	lm.deleteHandleFromLine( line, marker, oldHandle );
+	return ( oldHandle );
+}
+
+//  Sends Scintilla the delete notification for 'handle' and the 'add' notification for
+//  the 'newMarkerID' on 'line'.  Returns the newHandle.
+//  This function does not modify either the line map or history set!
+int ChangedDocument::replaceMarker(int line, int oldHandle, int newMarkerID)
+{
+	int sciLine = ::SendMessage( hView, SCI_MARKERLINEFROMHANDLE, oldHandle, 0 );
+	if ( line != sciLine ) {
+		bool dbgStop = true;
+	}
+
+	::SendMessage( hView, SCI_MARKERDELETEHANDLE, oldHandle, 0 );
+	return ( ::SendMessage( hView, SCI_MARKERADD, line, newMarkerID ) );
+}
+
+//  Update all history actions using an old handle to a new handle.
+void ChangedDocument::modifyMarkerHandle( int oldHandle, int newHandle )
+{
+	if ( hist.setHandleIndex( oldHandle ) ) {
+		do {
+			ActionHistory thisAction( *(hist.h_iter) );
+			thisAction.handle = newHandle;
+			hist.handle_index.replace( hist.h_iter, thisAction );
+		} while ( hist.setHandleIndex( oldHandle ) );
+	}
+}
+
+//  Processes new line action entries.
+void ChangedDocument::processInsert(int startLine, int endLine)
+{
+	int currLine = startLine;
+
+	//  Check the startLine for an existing changemark.
+	int preMarker_State = ::SendMessage( hView, SCI_MARKERGET, currLine, 0 );
+	if ( ( preMarker_State ) && ( preMarker_State & ( 1 << cm[CM_NOTSAVED]->id ) ) ) {
+		HistoryAction thisAction( CM_MARKERFORWARD );
+		thisAction.id = cm[CM_NOTSAVED]->id;
+		thisAction.handle = lm.getHandleFromLine( currLine, cm[CM_NOTSAVED]->id );
+		thisAction.posStart = currLine;
+		hist.insert_at_CurrActionIndex( &thisAction, NULL );
+		++currLine;
+	}
+
+	//  Insert newly inserted lines into the line map.
+	if ( ( endLine > startLine ) && ( endLine > currLine ) ) {
+		lm.insertLines( currLine, ( endLine - startLine ) );
+		HistoryAction thisAction( CM_LINECOUNTCHANGE );
+		thisAction.id = CM_LINEINSERT;
+		thisAction.posStart = currLine;
+		thisAction.posEnd = endLine;
+		hist.insert_at_CurrActionIndex( &thisAction, NULL );
+	}
+
+	//  Add new markers.
+	while ( currLine <= endLine || ( ( endLine < startLine ) && ( currLine == startLine ) ) ) {
+		HistoryAction thisAction( CM_MARKERADD );
+		thisAction.id = cm[CM_NOTSAVED]->id;
+		thisAction.handle = addMarker( currLine, cm[CM_NOTSAVED]->id );
+		thisAction.posStart = currLine;
+		hist.insert_at_CurrActionIndex( &thisAction, NULL );
+
+		currLine++;
+	}
+}
+
+//  Process an exisitng marker on a WHOLE LINE being deleted for proper undo/redo.
+void ChangedDocument::processDelete( int startLine, int endLine )
+{
+	//  Update the history
+	int currLine = startLine;
+	int prevMark_State = 0;
+
+	do {
+		prevMark_State = ::SendMessage( hView, SCI_MARKERGET, currLine, 0 );
+		if ( prevMark_State ) {
+
+			//  We are only interested in the lines marked as changed.
+			for ( int currMark = 0; currMark < NB_CHANGEMARKERS; currMark++ ) {
+				if ( prevMark_State & ( 1 << cm[currMark]->id ) ) {
+					int oldHandle = deleteMarker( currLine, cm[currMark]->id );
+
+					HistoryAction thisAction( CM_MARKERDELETE );
+					thisAction.id = cm[currMark]->id;	
+					thisAction.handle = _tmpActionHandle--;
+					thisAction.posStart = currLine;
+					hist.insert_at_NextActionIndex( &thisAction, NULL );
+
+					//  Update any previous history actions using 'oldHandle'.
+					modifyMarkerHandle( oldHandle, thisAction.handle );
+				}
+			}
+
+		}
+		currLine++;
+	} while ( currLine < endLine );
+
+	//  In Scintilla, when lines are deleted, if there is are markers on the line after the
+	//  deleted lines they won't get moved when an undo re-inserts those lines.
+	//  This attempts to fix that.
+	prevMark_State = ::SendMessage( hView, SCI_MARKERGET, currLine, 0 );
+	if ( prevMark_State ) {
+
+		//  Once again this only happens for if the line is marked as changed.
+		for ( int currMark = 0; currMark < NB_CHANGEMARKERS; currMark++ ) {
+			if ( prevMark_State & ( 1 << cm[currMark]->id ) ) {
+				HistoryAction thisAction( CM_MARKERMOVE );
+				thisAction.id = cm[currMark]->id;	
+				thisAction.handle = lm.getHandleFromLine( currLine, cm[currMark]->id );
+				//  posStart is the move from and posEnd is the move to for an undo.
+				thisAction.posStart = startLine;
+				thisAction.posEnd = currLine;
+				hist.insert_at_NextActionIndex( &thisAction, NULL );
+			}
+		}
+
+	}
+
+	//  Store the line change in the history_set
+	HistoryAction thisAction( CM_LINECOUNTCHANGE );
+	thisAction.id = CM_LINEDELETE;
+	thisAction.posStart = startLine;
+	thisAction.posEnd = endLine;
+	hist.insert_at_NextActionIndex( &thisAction, NULL );
+
+	//  Remove the lines from the line map.
+	lm.deleteLines( startLine, ( endLine - startLine ) );
+}
+
+//  Undo an action and return the updated action.  First value is true if action was
+//  modified, else returns false and null.
+void ChangedDocument::processUndo()
+{
+	int nb_actions_at_index = hist.action_index.count( targetIndex );
+	if ( nb_actions_at_index > 1 ) advance( hist.a_iter, ( nb_actions_at_index - 1 ) );
+
+	while ( hist.a_iter->_index == targetIndex ) {
+		ActionHistory thisAction = *(hist.a_iter);
+		if ( doUndo( &thisAction ) ) {
+			hist.action_index.replace( hist.a_iter, thisAction );
+		}
+		if ( hist.a_iter == hist.action_index.begin() )	break;
+		else hist.a_iter--;
+	}
+}
+
+//  Does the actual undoing of an action.  Returns true if HistoryAction is updated.
+bool ChangedDocument::doUndo( npp_plugin::actionhistory::ActionHistory *thisAction )
+{
+	bool updated = false;
+
+	// CM_MARKERFORWARD is safely ignored since it is only used as a positioning mark for the
+	// user to jump around and not as a state change action.
+	switch ( thisAction->type)
+	{
+		case CM_MARKERADD:
+		{
+			//  When undoing a markerAdd the actions and lines aren't deleted, they are just
+			//  modified since there still may be a redo.
+			int oldHandle = deleteMarker( thisAction->posStart, thisAction->id, thisAction->handle );
+			thisAction->handle = _tmpActionHandle--;
+			modifyMarkerHandle( oldHandle, thisAction->handle );
+			updated = true;						
+			break;
+		}
+
+		case CM_MARKERDELETE:
+		{
+			int oldHandle = thisAction->handle;
+			thisAction->handle = addMarker( thisAction->posStart, thisAction->id );
+			modifyMarkerHandle( oldHandle, thisAction->handle );
+			lm.modifyHandleOnLine( thisAction->posStart, thisAction->id, oldHandle, thisAction->handle );
+			updated = true;
+			break;
+		}
+
+		case CM_MARKERMOVE:
+		{
+			//  To move a marker, it gets deleted then added to the correct line.
+			int oldHandle = thisAction->handle;
+			::SendMessage( hView, SCI_MARKERDELETEHANDLE, oldHandle, 0 );
+			int newHandle = ::SendMessage( hView, SCI_MARKERADD, thisAction->posEnd, thisAction->id );
+			modifyMarkerHandle( oldHandle, newHandle );
+			lm.modifyHandleOnLine( thisAction->posEnd, thisAction->id, oldHandle, newHandle );
+			break;
+		}
+
+		case CM_LINECOUNTCHANGE:
+
+			switch ( thisAction->id )
+			{
+				case CM_LINEINSERT:
+					lm.deleteLines( thisAction->posStart, ( thisAction->posEnd - thisAction->posStart ) );
+					break;
+
+				case CM_LINEDELETE:
+					lm.insertLines( thisAction->posStart, ( thisAction->posEnd - thisAction->posStart ) );
+					break;
+
+				default:
+					break;
+			}
+
+			break;
+
+		default:
+			break;
+	}
+
+	return ( updated );
+}
+
+
+//  Undo an action and return the updated action.  First value is true if action was
+//  modified, else returns false and null.
+void ChangedDocument::processRedo()
+{
+
+	while ( hist.a_iter->_index == targetIndex ) {
+		ActionHistory thisAction = *(hist.a_iter);
+		if ( doRedo( &thisAction ) ) {
+			hist.action_index.replace( hist.a_iter, thisAction );
+		}
+		if ( hist.a_iter == hist.action_index.end() ) break;
+		else hist.a_iter++;
+	}
+}
+
+//  Does the actual re-doing of an action.  Returns true if ActionHistory is updated.
+bool ChangedDocument::doRedo( npp_plugin::actionhistory::ActionHistory *thisAction )
+{
+	bool updated = false;
+
+	switch ( thisAction->type)
+	{
+		case CM_MARKERADD:
+		{
+			int oldHandle = thisAction->handle;
+			thisAction->handle = addMarker( thisAction->posStart, thisAction->id );
+			modifyMarkerHandle( oldHandle, thisAction->handle );
+			lm.modifyHandleOnLine( thisAction->posStart, thisAction->id, oldHandle, thisAction->handle );
+			updated = true;						
+			break;
+		}
+
+		case CM_MARKERDELETE:
+		{
+			int oldHandle = deleteMarker( thisAction->posStart, thisAction->id, thisAction->handle );
+			thisAction->handle = _tmpActionHandle--;
+			modifyMarkerHandle( oldHandle, thisAction->handle );
+			updated = true;
+			break;
+		}
+
+		case CM_LINECOUNTCHANGE:
+
+			switch ( thisAction->id )
+			{
+				case CM_LINEINSERT:
+					lm.insertLines( thisAction->posStart, ( thisAction->posEnd - thisAction->posStart ) );
+					break;
+
+				case CM_LINEDELETE:
+					lm.deleteLines( thisAction->posStart, ( thisAction->posEnd - thisAction->posStart ) );
+					break;
+
+				default:
+					break;
+			}
+
+			break;
+
+		default:
+			break;
+	}
+
+
+	return ( updated );
+}
+
+//  Applies the CM_SAVED change marker to a document and updates it's history set.
+void ChangedDocument::processFileSave()
+{
+	int newHandle = 0;
+	int prevSavePoint = _savePointIndex;
+	_savePointIndex = npp_plugin::actionindex::getCurrActionIndex( _pDoc );
+
+	//  Set any previously SAVED markers that are currently not visible back to CM_UNSAVED.
+	if ( hist.setIdIndex( cm[CM_SAVED]->id ) ) {
+		while ( hist.i_iter->id == cm[CM_SAVED]->id ) {
+			if ( hist.i_iter->handle < 0 ) {
+				ActionHistory thisAction( *(hist.i_iter) );
+				thisAction.id = cm[CM_NOTSAVED]->id;
+				thisAction._referenceIndex = 0;
+				thisAction.isSaved = false;
+				hist.id_index.replace( hist.i_iter++, thisAction );
+			}
+			else {
+				++hist.i_iter;
+			}
+		}
+	}
+
+	//  Set all the visible markers ( from the line map ) to CM_SAVED
+	int lineMax = ::SendMessage( hCurrView(), SCI_GETLINECOUNT, 0, 0 );
+	handle_map* hm;
+
+	//  This is a good time to cleanup any possible stray markers as well.
+	::SendMessage( hView, SCI_MARKERDELETEALL, cm[CM_NOTSAVED]->id, 0 );
+
+	for ( lm_pos lpos = lm._lines.begin(); lpos != lm._lines.end(); ++lpos ) {
+		if ( lpos->first > lineMax ) continue;
+
+		hm = &( lpos->second );
+		for ( hm_pos hpos = hm->begin(); hpos != hm->end(); ) {
+			if ( ( hpos->first == cm[CM_SAVED]->id ) || ( hpos->second <= 0 ) ) {
+					++hpos;
+					continue;
+			}
+
+			if ( hist.setHandleIndex( hpos->second ) ) {
+				newHandle = replaceMarker( lpos->first, hpos->second, cm[CM_SAVED]->id );
+				lm.addHandleToLine( lpos->first, cm[CM_SAVED]->id, newHandle );
+
+				handle_iter currSP_iter = hist.h_iter;
+				do {
+					ActionHistory thisAction( *(hist.h_iter) );
+					thisAction.id = cm[CM_SAVED]->id;
+					thisAction.handle = newHandle;
+					hist.handle_index.replace( hist.h_iter, thisAction );
+
+					if ( hist.h_iter->_index > _savePointIndex ) continue;
+
+					if ( ( hist.h_iter->_index > currSP_iter->_index ) ||
+							( ( hist.h_iter->_index == currSP_iter->_index ) &&
+								( hist.h_iter->_entry > currSP_iter->_entry ) ) ) {
+						currSP_iter = hist.h_iter;
+					}
+
+				} while ( hist.setHandleIndex( hpos->second ) );
+				hm->erase( hpos++ );
+
+				ActionHistory sp_action( *(currSP_iter) );
+				sp_action.isSaved = true;
+				sp_action._referenceIndex = _savePointIndex;
+				hist.handle_index.replace( currSP_iter, sp_action );
+			}
+			else {
+				// This should never happen.
+				bool dbgStop = true;
+			}
+		}
+	}
+}
+//  Returns the position of the next change.  Direction 'true' goes to the next most recent change.
+//  This function uses the marker handle to determine which change is more or less recent.
+int ChangedDocument::getNextChangeLine(bool direction)
+{
+	if (! hist.setHandleIndex( currChangePositionTarget ) ) return ( -1 );
+
+	bool checkNext = true;
+	int targetLine = -1;
+
+	if ( direction ) {
+		do {
+			if ( hist.h_iter == hist.handle_index.end() ) checkNext = false;
+			if ( hist.h_iter->handle > currChangePositionTarget ) {
+				targetLine = lm.getLineFromHandle( cm[CM_NOTSAVED]->id, hist.h_iter->handle );
+				if ( targetLine >= 0 ) {
+					currChangePositionTarget = hist.h_iter->handle;
+					checkNext = false;
+				}
+			}
+			if ( checkNext ) ++hist.h_iter;
+		} while ( checkNext );
+	}
+
+	else {
+		do {
+			if ( hist.h_iter == hist.handle_index.begin() ) checkNext = false;
+			if ( hist.h_iter->handle < currChangePositionTarget ) {
+				targetLine = lm.getLineFromHandle( cm[CM_NOTSAVED]->id, hist.h_iter->handle );
+				if ( targetLine >= 0 ) {
+					currChangePositionTarget = hist.h_iter->handle;
+					checkNext = false;
+				}
+			}
+			if ( checkNext ) --hist.h_iter;
+		} while ( checkNext );
+	}
+
+	return ( targetLine );
+}
+
 //  Initializes the plugin and sets up config values.
 void initPlugin()
 {
@@ -146,7 +687,7 @@ void initPlugin()
 		currCM->markName = ( i == CM_SAVED ) ? ( TEXT("CM_SAVED") ) : ( TEXT("CM_NOTSAVED") );
 		currCM->styleName = ( i == CM_SAVED ) ? ( TEXT("Changes: Saved") ) : ( TEXT("Changes: Not Saved") );
 
-		//  Style Settings.  From WodsStyle node ( outside of GuiConfig element )
+		//  Style Settings.  From WordsStyle node ( outside of GuiConfig element )
 		TiXmlHandle hXmlDoc( xml::get_pXmlPluginConfigDoc() );
 		TiXmlElement* style_Node = hXmlDoc.FirstChild( 
 			TEXT("NotepadPlus")).FirstChild( TEXT("LexerStyles")).FirstChild(
@@ -186,7 +727,7 @@ void initPlugin()
 
 	//  Now that all the config values are set...
 	if (! _track ) {
-		npp_plugin_changemarker::disable();
+		npp_plugin_changemarker::disablePlugin();
 		return;
 	}
 
@@ -210,7 +751,7 @@ void initPlugin()
 				retry = true;
 			}
 			else {
-				npp_plugin_changemarker::disable();
+				npp_plugin_changemarker::disablePlugin();
 				break;
 			}
 		}
@@ -236,6 +777,71 @@ void initMarker( int* markerArray )
 		}
 	}
 
+}
+
+//  Change Jumping.  Direction 'true' moves to more recent change.
+void jumpChanges( bool direction )
+{
+	int pDoc = npp_plugin::doctabmap::getVisibleDocId_by_View( npp_plugin::intCurrView() );
+	if ( _doc_set.find( pDoc ) == _doc_set.end() ) {
+		::MessageBox( hCurrView(),
+			TEXT("No line change information was found for this document!"),
+			TEXT("Jump to Change"),
+			MB_OK );
+		return;
+	}
+	ChangedDocument* thisDoc = _doc_map[pDoc];
+
+	int targetLine = thisDoc->getNextChangeLine( direction );
+
+	if ( targetLine < 0 ) {
+		::MessageBox( hCurrView(),
+			TEXT("You have reached the end of the un-saved changes in this direction."),
+			TEXT("Jump to Change"),
+			MB_OK );
+	}
+	else {
+		::SendMessage( hCurrView(), SCI_ENSUREVISIBLEENFORCEPOLICY, targetLine, 0 );
+		::SendMessage( hCurrView(), SCI_GOTOLINE, targetLine, 0 );
+	}
+}
+
+//  Changed Line Jumping direction 'true' is down.
+//  Pretty much the same as the normal bookmark jumping in N++.
+void jumpChangedLines( bool direction )
+{
+	int posStart = ::SendMessage( hCurrView(), SCI_GETCURRENTPOS, 0, 0 );
+	int lineStart = ::SendMessage( hCurrView(), SCI_LINEFROMPOSITION, posStart, 0 );
+	int lineMax = ::SendMessage( hCurrView(), SCI_GETLINECOUNT, 0, 0 );
+
+	int currLine;
+	int nextLine;
+	int sci_marker_direction;
+	int sci_search_mask = ( 1 << cm[CM_NOTSAVED]->id );
+
+	if ( direction ) {
+		currLine = ( lineStart < lineMax ) ? ( lineStart + 1 ) : ( 0 );
+		sci_marker_direction = SCI_MARKERNEXT;
+	}
+	else {
+		currLine = ( lineStart > 0 ) ? ( lineStart - 1 ) : ( lineMax );
+		sci_marker_direction = SCI_MARKERPREVIOUS;
+	}
+
+	nextLine = ::SendMessage( hCurrView(), sci_marker_direction, currLine, sci_search_mask );
+
+	if ( nextLine < 0 ) {
+		currLine = ( direction ) ? ( 0 ) : ( lineMax );
+		nextLine = ::SendMessage( hCurrView(), sci_marker_direction, currLine, sci_search_mask );
+	}
+
+	if ( nextLine < 0 ) {
+		::MessageBox( hCurrView(), TEXT("No un-saved changes found!" ), TEXT("Jump to Changed Line"), MB_OK );
+		return;
+	}
+
+	::SendMessage( hCurrView(), SCI_ENSUREVISIBLEENFORCEPOLICY, nextLine, 0 );
+	::SendMessage( hCurrView(), SCI_GOTOLINE, nextLine, 0 );
 }
 
 //  Checks and updates marker styles when notified.
@@ -276,17 +882,11 @@ void wordStylesUpdatedHandler()
 	}
 }
 
-//  Document modification handler for 'BEFORE' messages to track marker handle changes before
-//  the doc is actually modified.
-void preModificationHandler ( SCNotification* scn )
-{
-}
-
 //  Document modification handler to identify and track line changes.
 void modificationHandler ( SCNotification* scn )
 {
 
-#define MSG_DEBUGGING
+//#define MSG_DEBUGGING
 #ifdef MSG_DEBUGGING
 	int dbgmsg = scn->nmhdr.code;
 	int dbgflags = scn->modificationType;
@@ -294,15 +894,10 @@ void modificationHandler ( SCNotification* scn )
 	::_itot(dbgflags, dbgflagHEX, 16);
 	TCHAR dbgflag2[65];
 	::_itot(dbgflags, dbgflag2, 2);
-	int dbgLines = scn->linesAdded;
 #endif
 
-	//  Static state variable for just BEFOREDELETE notifications, which are always followed
-	//  by the actual, so no need to identify by pdoc.
-	static bool prevWasBeforeDelete = false;
-
-	//  <---  Leave if we can. --->
-	if ( _doDisable ) return;
+	//  Static state variables
+	static bool prevWasBeforeDelete = false;		//  Used for multiline delete tracking.
 
 	//  Send the notification for processing and get back this documents history state.
 	int pDoc;
@@ -311,11 +906,10 @@ void modificationHandler ( SCNotification* scn )
 	bool excluded;
 	bool dryrun;
 	boost::tuples::tie( pDoc, prevIndex, currIndex, excluded, dryrun) =
-		a_index::processSCNotification( scn );
+		npp_plugin::actionindex::processSCNotification( scn );
 
-	if ( excluded ) {
-		return;
-	}
+	//  <---  Leave if we can. --->
+	if ( _doDisable || excluded ) return;
 
 	if ( dryrun && ( scn->modificationType & ( SC_PERFORMED_UNDO | SC_PERFORMED_REDO ) ) ) {
 		prevWasBeforeDelete = false;
@@ -325,262 +919,128 @@ void modificationHandler ( SCNotification* scn )
 	//  Notification is truly a modify that we need to handle.
 	HWND hView = reinterpret_cast<HWND>(scn->nmhdr.hwndFrom);
 	int currLine = ::SendMessage( hView, SCI_LINEFROMPOSITION, scn->position, 0);
-	int startLine = currLine;
 	int modFlags = scn->modificationType;
+
+	//  Get a ChangedDocument object for this Document.
+	if ( _doc_set.find( pDoc ) == _doc_set.end() ) {
+		//  Only create new ChangedDocument objects for open documents that do not have change
+		//  markers disabled.
+		if ( ( npp_plugin::doctabmap::fileIsOpen( pDoc ) ) &&
+				( _doc_disabled_set.find( pDoc ) == _doc_disabled_set.end() ) ) {
+			_doc_set.insert(pDoc);
+			ChangedDocument* newDoc = new ChangedDocument(pDoc);
+			_doc_map.insert( std::make_pair( pDoc, newDoc ) );
+		}
+		else {
+			return;
+		}
+	}
+	ChangedDocument* thisDoc = _doc_map[pDoc];
+	thisDoc->hView = hView;
+	thisDoc->currChangePositionTarget = thisDoc->lm.getCurrMaxMarkerHandle();
 
 	//  <---  Marker Control --->
 
 	//  Undo actions.
 	if ( modFlags & ( SC_PERFORMED_UNDO ) ) {
-		//  Using the prevIndex since we are going backwards.
-		if ( cm[CM_NOTSAVED]->history.setTargetIndex( pDoc, prevIndex ) ) {
-
-			int nb_actions_at_index = cm[CM_NOTSAVED]->history.action_index.count(
-				boost::make_tuple( pDoc, prevIndex ) );
-
-			if ( nb_actions_at_index > 1 ) 
-				advance( cm[CM_NOTSAVED]->history.a_iter, ( nb_actions_at_index - 1 ) );
-
-			while ( cm[CM_NOTSAVED]->history.a_iter->_actionIndex == prevIndex ) {
-
-				//  Make what-ever modifications need to be made to keep current.
-				ActionHistory thisAction = *(cm[CM_NOTSAVED]->history.a_iter);
-				bool updated = false;
-
-				bool dbgWatch = false;
-				//  dbgstring: Action: {s1}:{s2} type: {s3} handle: {s4} line: {s5}
-				docAction_iter s0 = cm[CM_NOTSAVED]->history.a_iter;
-				int s1 = thisAction._actionIndex;
-				int s2 = thisAction._actionEntryID;
-				int s3 = thisAction._action;
-				int s4 = thisAction._actionHandle;
-				int s5 = thisAction._referenceIndex;
-
-				switch (thisAction._action)
-				{
-					case PLM_MARKERADD:
-					{
-						int tmpAH =  cm[CM_NOTSAVED]->tmpActionHandle;
-						::SendMessage( hView, SCI_MARKERDELETEHANDLE, thisAction._actionHandle, 0 );
-						thisAction._actionHandle = cm[CM_NOTSAVED]->tmpActionHandle--;
-						int tmpAH2 =  cm[CM_NOTSAVED]->tmpActionHandle;
-						updated = true;						
-
-						dbgWatch = true;
-						break;
-					}
-					case PLM_MARKERDELETE:
-					{
-						int markerID = ::SendMessage( hView, SCI_MARKERADD, thisAction._referenceIndex, cm[CM_NOTSAVED]->id );
-						thisAction._actionHandle = markerID;
-						updated = true;						
-
-						dbgWatch = true;
-						break;
-					}
-
-						dbgWatch = true;
-						break;
-
-					case PLM_MARKERFORWARD:
-						//  need to modify pointers?
-						dbgWatch = true;
-						break;
-
-					default:
-						//  there shouldn't be a time this is hit.
-						dbgWatch = true;
-						break;
-				}
-
-				//  Replace the current indexed action with thisAction.
-				if ( updated ) {
-					cm[CM_NOTSAVED]->history.action_index.replace(
-						cm[CM_NOTSAVED]->history.a_iter, thisAction );
-					//  Since replace will forward iterate.
-					//cm[CM_NOTSAVED]->history.a_iter--;
-				}
-				
-				//  Go to the next action.
-				if ( cm[CM_NOTSAVED]->history.a_iter == cm[CM_NOTSAVED]->history.action_index.begin() )
-					break;
-
-				cm[CM_NOTSAVED]->history.a_iter--;
-			}
-		}
-		else {
-			// Nothing to do?
-			bool dbgStop = true;
+		thisDoc->_prevInsertLine = -1;
+		//  Use the prevIndex since we are going backwards.
+		if ( thisDoc->hist.setActionIndex( prevIndex ) ) {
+			thisDoc->targetIndex = prevIndex;
+			thisDoc->processUndo();
 		}
 	}
 
 	//  Redo actions.
 	else if ( modFlags & ( SC_PERFORMED_REDO ) ) {
-		//  Redo Actions.
-		if ( cm[CM_NOTSAVED]->history.setTargetIndex( pDoc, currIndex ) ) {
-
-			int nb_actions_at_index = cm[CM_NOTSAVED]->history.action_index.count(
-				boost::make_tuple( pDoc, currIndex ) );
-
-			while ( cm[CM_NOTSAVED]->history.a_iter->_actionIndex == currIndex ) {
-
-				//  Make what-ever modifications need to be made to keep current.
-				ActionHistory thisAction = *(cm[CM_NOTSAVED]->history.a_iter);
-				bool updated = false;
-
-				bool dbgWatch = false;
-
-				//  dbgstring: Action: {s0} at {s1}:{s2} type: {s3} handle: {s4} line: {s5}
-				docAction_iter s0 = cm[CM_NOTSAVED]->history.a_iter;
-				int s1 = thisAction._actionIndex;
-				int s2 = thisAction._actionEntryID;
-				int s3 = thisAction._action;
-				int s4 = thisAction._actionHandle;
-				int s5 = thisAction._referenceIndex;
-
-
-				switch (thisAction._action)
-				{
-					case PLM_MARKERADD:
-					{
-						int markerID = ::SendMessage( hView, SCI_MARKERADD, thisAction._referenceIndex, cm[CM_NOTSAVED]->id );
-						thisAction._actionHandle = markerID;
-						updated = true;						
-
-						dbgWatch = true;
-						break;
-					}
-					case PLM_MARKERDELETE:
-					{
-						::SendMessage( hView, SCI_MARKERDELETEHANDLE, thisAction._actionHandle, 0 );
-						thisAction._actionHandle = cm[CM_NOTSAVED]->tmpActionHandle;
-						cm[CM_NOTSAVED]->tmpActionHandle--;
-						updated = true;						
-
-						dbgWatch = true;
-						break;
-					}
-
-					case PLM_MARKERFORWARD:
-						//  need to modify pointers?
-						dbgWatch = true;
-						break;
-
-					default:
-						//  there shouldn't be a time this is hit.
-						dbgWatch = true;
-						break;
-				}
-
-				//  Replace the current indexed action with thisAction.
-				if ( updated ) {
-					cm[CM_NOTSAVED]->history.action_index.replace(
-						cm[CM_NOTSAVED]->history.a_iter, thisAction );
-					//  Since replace will forward iterate.
-					//cm[CM_NOTSAVED]->history.a_iter--;
-				}
-				
-				//  Go to the next action.
-				if ( cm[CM_NOTSAVED]->history.a_iter == cm[CM_NOTSAVED]->history.action_index.end() )
-					break;
-
-				cm[CM_NOTSAVED]->history.a_iter++;
-			}
+		thisDoc->_prevInsertLine = -1;
+		if ( thisDoc->hist.setActionIndex( currIndex ) ) {
+			thisDoc->targetIndex = currIndex;
+			thisDoc->processRedo();
 		}
-		else {
-			// Nothing to do?
-			bool dbgStop = true;
-		}
-
 	}
 
 	//  New actions.
 	else {
-		//  Truncate existing history entries if needed.
-		if ( cm[CM_NOTSAVED]->history.setTargetIndex( pDoc, currIndex ) ) {
-			if (! prevWasBeforeDelete ) cm[CM_NOTSAVED]->history.truncateActions();
+		//  Set the target action index and truncate existing history entries if needed.
+		if ( thisDoc->hist.setActionIndex( currIndex ) ) {
+			//  Multiline deletes store actions in currIndex + 1.
+			if ( (! prevWasBeforeDelete ) && (! dryrun ) ) {
+				thisDoc->hist.truncateActions();
+			}
+			else if ( dryrun ) {
+				thisDoc->hist.truncateActionsAtNextIndex();
+			}
 		}
 		prevWasBeforeDelete = false;
 
-		//  Track removal of existing markers.
+		//  Track deleted line marker states.
 		if ( modFlags & ( SC_MOD_BEFOREDELETE ) ) {
-			currLine = startLine;
+			thisDoc->_prevInsertLine = -1;
 			int endLine = ::SendMessage( hView, SCI_LINEFROMPOSITION, ( scn->position + scn->length ), 0 );
-			if ( currLine <= endLine ) {
+			if ( ( currLine - endLine ) != 0 ) {
 				prevWasBeforeDelete = true;
-				do {
-					//  tmpActionHandle is a negative int that is used as a placeholder for deleted
-					//  marker handles.
-					if ( ::SendMessage( hView, SCI_MARKERGET, currLine, 0 & ( 1 << cm[CM_NOTSAVED]->id ) ) ) {
-						cm[CM_NOTSAVED]->tmpActionHandle--;
-						int dbgTmpActionHandle = cm[CM_NOTSAVED]->tmpActionHandle;
-						cm[CM_NOTSAVED]->history.insertAction_at_NextIndex( PLM_MARKERDELETE,
-								cm[CM_NOTSAVED]->tmpActionHandle, currLine, false );
-					}
-					currLine++;
-				} while ( currLine <= endLine );
+				thisDoc->targetIndex = currIndex;
+				thisDoc->processDelete( currLine, endLine );
 			}
 		}
 
-		//  Track new insertions.
-		else {
-			//  Send Scintilla the marker messages and store the action in the history tracker.
-			int markerHandle;
-			do {
-				//  Right now this happens for EVERY change, need a line to handle map!
-				markerHandle = ::SendMessage( hView, SCI_MARKERADD, currLine, cm[CM_NOTSAVED]->id );
-				cm[CM_NOTSAVED]->history.insertAction_at_CurrIndex(	PLM_MARKERADD, markerHandle, currLine, false );
-				cm[CM_NOTSAVED]->prevActionHandle = markerHandle;
-				cm[CM_NOTSAVED]->prevActionHandleRefIndex = currIndex;
-				currLine++;
-			} while ( currLine <= ( startLine + scn->linesAdded ) );
+		//  Track new actions.
+		else if ( ( thisDoc->_prevInsertLine != currLine ) ||
+				( ( thisDoc->_prevInsertLine == currLine ) && ( scn->linesAdded != 0 ) ) ) {
+			thisDoc->_prevInsertLine = currLine;
+			thisDoc->targetIndex = currIndex;
+			thisDoc->processInsert( currLine, ( currLine + scn->linesAdded ) );
 		}
+	}
 
+	if ( ( currIndex == 0 ) || ( currIndex == thisDoc->_savePointIndex ) ) {
+		//  This is a good time to cleanup any possible stray markers.
+		::SendMessage( hView, SCI_MARKERDELETEALL, cm[CM_NOTSAVED]->id, 0 );
+		if ( currIndex == 0 ) ::SendMessage( hView, SCI_MARKERDELETEALL, cm[CM_SAVED]->id, 0 );
 	}
 
 
-
-//#if(0)
-	//  <--- Area for testing action counter --->
-	int actionCount = currIndex;
-
-	class ActionCounter : public Editor {
-	public:
-		using Editor::pdoc;
-	};
-	ActionCounter* ac = reinterpret_cast<ActionCounter *>(::GetWindowLongPtr( hView, 0));
-	Document* ac_pDoc = ac->pdoc;
-	//  Use a watch on ac_pDoc->cb.currentAction for Scintilla count.
-
-	//  ^^^^^^  end area for action counter testing
-//#endif
+#ifdef MSG_DEBUGGING
+	// Doc:: {pDoc}  flags:{dbgflagHEX} prevIndex:: {prevIndex} currIndex:: {currIndex}  sciIndex:: {(((*dbg_pDoc).cb).uh).currentAction}  hView:: {hView}
+	Document* dbg_pDoc = reinterpret_cast<Document *>(pDoc);
+	bool dbg_pDoc_watch = false;
+#endif
 
 }
 
 //  Alters the state of current Changes: Not Saved markers to Changes: Saved.
-void fileSaveHandler (SCNotification *scn)
+void fileSaveHandler ()
 {
-	//  Iterate through the current document.
+	int pDoc = npp_plugin::doctabmap::getVisibleDocId_by_View( npp_plugin::intCurrView() );
+	if ( _doc_set.find( pDoc ) != _doc_set.end() ) {
+		ChangedDocument* thisDoc = _doc_map[pDoc];
+		thisDoc->processFileSave();
+	}
+}
+
+//  Clean up ChangedDocument object for the closing document.
+void fileBeforeCloseHandler( SCNotification *scn )
+{
+	int pDoc = npp_plugin::doctabmap::getDocIdFromBufferId( scn->nmhdr.idFrom );
+	if ( _doc_set.find( pDoc ) != _doc_set.end() ) {
+		delete _doc_map[pDoc];
+		_doc_map.erase( _doc_map.find( pDoc ) );
+		_doc_set.erase( pDoc );
+	}
 }
 
 //  Movement control function.
-void jumpPrevChange()
-{
-	::MessageBox(npp_plugin::hNpp(),
-	TEXT(""),
-	TEXT("jumpPrevChange"),
-	MB_OK);
-}
-
+void jumpChangePrev() { jumpChanges( false ); }
 
 //  Movement control function.
-void jumpNextChange()
-{
-	::MessageBox(npp_plugin::hNpp(),
-	TEXT(""),
-	TEXT("jumpNextChange"),
-	MB_OK);
-}
+void jumpChangeNext() { jumpChanges( true ); }
+
+//  Movement Control function.
+void jumpLineUp() {	jumpChangedLines( false ); }
+
+//  Movement Control function.
+void jumpLineDown() { jumpChangedLines( true ); }
 
 //  Global display margin control
 void displayWithLineNumbers()
@@ -616,8 +1076,61 @@ void displayAsHighlight()
 	cm[CM_NOTSAVED]->setTargetMarginMenuItem( MARGIN_NONE );
 }
 
+//  Clear the marker history for the currently focused document and disable change marker
+//  tracking for it.
+void disableDoc()
+{
+	int pDoc = npp_plugin::doctabmap::getVisibleDocId_by_View( npp_plugin::intCurrView() );
+	bool menu_enabled = true;
+	
+	if ( _doc_disabled_set.find( pDoc ) != _doc_disabled_set.end() ) {
+		//  Disabled, so remove from disabled list and enable menu.
+		_doc_disabled_set.erase( pDoc );
+	}
+
+	else if ( _doc_set.find( pDoc ) != _doc_set.end() ) {
+		//  Enabled: add to disabled list, cleanup existing ChangedDocument, and disable menu.
+		_doc_disabled_set.insert( pDoc );
+		delete _doc_map[pDoc];
+		_doc_map.erase( _doc_map.find( pDoc ) );
+		_doc_set.erase( pDoc );
+		menu_enabled = false;
+		::SendMessage( hCurrView(), SCI_MARKERDELETEALL, cm[CM_NOTSAVED]->id, 0 );
+		::SendMessage( hCurrView(), SCI_MARKERDELETEALL, cm[CM_SAVED]->id, 0 );
+	}
+
+	else {
+		//  Not even initialized, so add to disabled list and disable menu.
+		_doc_disabled_set.insert( pDoc );
+		menu_enabled = true;
+	}
+
+	setMenuState( menu_enabled );
+}
+
+void setMenuState( bool enabled )
+{
+	enabled = !enabled;
+
+	HMENU hMenu = (HMENU)( ::SendMessage( hNpp(), NPPM_GETMENUHANDLE, NPPPLUGINMENU, 0 ) );
+
+	for ( int menuItem = 1; menuItem < NB_MENU_COMMANDS; menuItem++ ) {
+		int cmdID = getCmdId( menuItem );
+
+		switch ( menuItem )
+		{
+		case CMD_DISABLEDOC:
+			::SendMessage(npp_plugin::hNpp(), NPPM_SETMENUITEMCHECK, cmdID, enabled );
+			break;
+
+		default:
+			::EnableMenuItem( hMenu, cmdID, enabled );
+		}
+	}
+}
+
 //  Clear marker history and disable change marker tracking and menu items.
-void disable()
+void disablePlugin()
 {
 	_doDisable = !_doDisable;
 
@@ -628,18 +1141,42 @@ void disable()
 
 		switch ( menuItem )
 		{
-		case CMD_DISABLE:
+		case CMD_DISABLEPLUGIN:
 			::SendMessage(npp_plugin::hNpp(), NPPM_SETMENUITEMCHECK, cmdID, _doDisable );
 			if ( _doDisable ) {
 				//  Remove Scintilla marker definitions.
 				mark::setMarkerAvailable( cm[CM_SAVED]->id );
 				mark::setMarkerAvailable( cm[CM_NOTSAVED]->id );
 
-				//  Cleanup the Change_Marks
+				//  Cleanup existing Change_Marks.
+				for ( int view = MAIN_VIEW; view <= SUB_VIEW; view++ ) {
+					int nb_openfiles_view = ( view == MAIN_VIEW ) ? ( PRIMARY_VIEW ) : ( SECOND_VIEW );
+					int nb_Tabs = ::SendMessage( hNpp(), NPPM_GETNBOPENFILES, 0, nb_openfiles_view );
+					if ( nb_Tabs > 0 ) {
+						int index2Restore = ::SendMessage( hNpp(), NPPM_GETCURRENTDOCINDEX, view, 0 );
+						for ( int tab = 0; tab < nb_Tabs; tab++ ) {
+							::SendMessage( hNpp(), NPPM_ACTIVATEDOC, view, tab);
+							::SendMessage( hViewByInt( view ), SCI_MARKERDELETEALL, cm[CM_SAVED]->id, 0 );
+							::SendMessage( hViewByInt( view ), SCI_MARKERDELETEALL, cm[CM_NOTSAVED]->id, 0 );
+						}
+						::SendMessage( hNpp(), NPPM_ACTIVATEDOC, view, index2Restore );
+					}
+				}
+
 				delete cm[CM_SAVED];
 				delete cm[CM_NOTSAVED];
 
-				//  Store to config file value to xml
+				//  Cleanup existing documents.
+				while (! _doc_map.empty() ) {
+					if ( _doc_map.size() == 0 ) {
+						bool dbgStop = true;
+					}
+					_doc_set.erase( _doc_map.begin()->first );
+					delete _doc_map.begin()->second;
+					_doc_map.erase( _doc_map.begin() );
+				}
+
+				//  Store config file tracking value to xml
 				xml::setGUIConfigValue( TEXT("SciMarkers"), TEXT("trackUNDOREDO"), TEXT("false") );
 
 				//  TODO: add a way to clear out the xml

@@ -29,7 +29,7 @@
 	/>
 	<UserMacro
 		Name="SciRelIntDir"
-		Value="$(SolutionDir)..\scintilla\Release\"
+		Value="$(SolutionDir)..\scintilla\vcbuild\Release\"
 		PerformEnvironmentSet="true"
 	/>
 	<UserMacro

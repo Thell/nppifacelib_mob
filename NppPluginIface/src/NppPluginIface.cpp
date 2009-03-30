@@ -77,12 +77,16 @@ extern "C" __declspec(dllexport) void setInfo(NppData NppData)
 //  Update handle pointer to the currently active view.
 HWND updateCurrViewHandle()
 {
-	int currentEdit;
-	::SendMessage(_hNpp, NPPM_GETCURRENTSCINTILLA, 0, (LPARAM)&currentEdit);
-
+	static HWND hPrevCurrView;
 	_bRefreshCurrViewH = false;
 
-	return ( currentEdit == 0 ) ? ( _hScintillaMain ): ( _hScintillaSecond );
+	int currentEdit;
+	::SendMessage(_hNpp, NPPM_GETCURRENTSCINTILLA, 0, (LPARAM)&currentEdit);
+	
+	if ( currentEdit != -1 ) {
+		hPrevCurrView = ( currentEdit == 0 ) ? ( _hScintillaMain ): ( _hScintillaSecond );
+	}
+	return ( hPrevCurrView );
 }
 
 }  // End: Unnamed namespace for private variables
@@ -146,33 +150,10 @@ void setPluginFuncItem(tstring Name, PFUNCPLUGINCMD pFunction,
 HANDLE hModule() { return _hModule; }
 
 //  Returns this module's full name.
-tstring* getModuleName()
-{
-	/*
-	TCHAR moduleName[MAX_PATH];
-
-	::GetModuleFileName( (HMODULE)hModule(), moduleName, MAX_PATH);
-	PathStripPath(moduleName);
-
-	return moduleName;
-	*/
-	return &_ModuleName;
-}
+tstring* getModuleName() { return &_ModuleName; }
 
 //  Returns this module's name without the .dll extension.
-tstring* getModuleBaseName()
-{
-	/*
-	TCHAR baseName[MAX_PATH];
-
-	::GetModuleFileName( (HMODULE)hModule(), baseName, MAX_PATH);
-	PathStripPath(baseName);
-	PathRemoveExtension(baseName);
-
-	return baseName;
-	*/
-	return &_ModuleBaseName;
-}
+tstring* getModuleBaseName() { return &_ModuleBaseName; }
 
 //  Returns the main Notepad++ handle.
 HWND hNpp() { return _hNpp; }
@@ -195,8 +176,7 @@ HWND hSecondView() { return _hScintillaSecond; }
 /*
  *  Use hMainView and hSecondView instead of the hCurrView when a message must reach both views.
  *  For instance a lexer plugin that works with indicators or markers and makes a change to
- *  a definition value will only have it updated in the currently focused view unless 
- *  the message is sent to both.
+ *  a definition value will only have it updated in the view the message is sent to.
  *
  */
 HWND hCurrView()
@@ -208,10 +188,10 @@ HWND hCurrView()
 }
 
 //  Returns the handle for the Notepad++ view not currently focused.
-HWND hAltView() { return ( ( hCurrView() == hMainView() ) ? ( _hScintillaSecond ) : ( _hScintillaMain ) ); }
+HWND hAltView() { return ( ( hCurrView() == _hScintillaMain ) ? ( _hScintillaSecond ) : ( _hScintillaMain ) ); }
 
 //  Returns the current target of hCurrView().  0 for main view and 1 for second view.
-int intCurrView() { return ( ( hCurrView() == hMainView() ) ? ( 0 ) : ( 1 ) ); }
+int intCurrView() { return ( ( hCurrView() == _hScintillaMain ) ? ( 0 ) : ( 1 ) ); }
 
 //  Sets flag to force update of view handle upon next call of hCurrView()
 void hCurrViewNeedsUpdate() { _bRefreshCurrViewH = true; }

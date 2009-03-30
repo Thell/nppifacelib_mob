@@ -62,7 +62,6 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="xpm.obj platwin.obj  uniconversion.obj"
 				LinkIncremental="2"
-				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"
 			/>
@@ -120,7 +119,6 @@
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -135,7 +133,6 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="xpm.obj platwin.obj  uniconversion.obj"
 				LinkIncremental="1"
-				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -210,7 +207,6 @@
 				AdditionalDependencies="xpm.obj platwin.obj  uniconversion.obj"
 				LinkIncremental="2"
 				ModuleDefinitionFile=""
-				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"
 			/>
@@ -268,7 +264,7 @@
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				DebugInformationFormat="3"
+				DebugInformationFormat="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -283,7 +279,8 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="xpm.obj platwin.obj  uniconversion.obj"
 				LinkIncremental="1"
-				GenerateDebugInformation="true"
+				ModuleDefinitionFile=""
+				GenerateDebugInformation="false"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"

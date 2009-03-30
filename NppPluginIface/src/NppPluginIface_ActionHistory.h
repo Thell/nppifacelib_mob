@@ -49,152 +49,155 @@ namespace actionhistory{
 using boost::multi_index::multi_index_container;
 using namespace boost::multi_index;
 
+//  Action object for a plugin to use and pass to the DocumentActionHistory insert function.
+struct HistoryAction {
+	int type;
+	int id;
+	int handle;
+	int preState;
+	int postState;
+	int posStart;
+	int posEnd;
+	bool isSaved;
+
+	HistoryAction(int type):type(type), id(-1), handle(0), preState(0), postState(0),
+		posStart(-1), posEnd(-1), isSaved(false){};
+};
 
 //  Action history class for objects meant to be inserted into the HistoryAction_set.
 struct ActionHistory {
-	//  Scintilla Document ID.
-	int _pDoc;
-	/* The _pDoc, _actionIndex, _actionEntryID create a unique identifier for an action item. */
-	//  The Scintilla action count for the document when the action took place.
-	int _actionIndex;
-	//  The entry id of an action at this action index.
-	int _actionEntryID;
-	//  Action identifier being stored.
-	int _action;			
-	//  An internal handle to be used by the plugin.
-	int _actionHandle;		
-	// Used to give an action the ability to reference a different action index.  Useful for
-	// allowing a single actionHandle to be re-used in later actions, if the actionHandle is
-	// removed/altered a future undo action can restore based on this value.
-	int _referenceIndex;	
-	//  Tracks the action count of a document when it was saved to work with UNDO/REDO.
-	bool _isSavePoint;
+	int _index;
+	int _entry;
+	int _referenceIndex;
 
-	//  Action history object meant to be inserted into the HistoryAction_set.
-	ActionHistory(int pDoc, int actionIndex, int actionEntryID, int action, int actionHandle,
-		int referenceIndex, bool isSavePoint)
-		:_pDoc(pDoc), _actionIndex(actionIndex), _actionEntryID(actionEntryID), _action(action),
-		_actionHandle(actionHandle), _referenceIndex(referenceIndex), _isSavePoint(isSavePoint){};
+	int type;
+	int id;
+	int handle;
+	int preState;
+	int postState;
+	int posStart;
+	int posEnd;
+	bool isSaved;
 
-	bool operator<(const ActionHistory& ah)const{ return ( _actionIndex < ah._actionIndex); };
+	ActionHistory(int index, int entry, int referenceIndex, int type, int id, int handle, int preState,
+		int postState, int posStart, int posEnd, bool isSaved )
+		:_index(index), _entry(entry), _referenceIndex(referenceIndex),
+		type(type), id(id), handle(handle), preState(preState), postState(postState),
+		posStart(posStart), posEnd(posEnd), isSaved(isSaved){};
+
+	bool operator<(const ActionHistory& ah)const{ return ( ( _index < ah._index ) && ( _entry < ah._entry ) ); };
 };
+
+//  ActionHistory_set tags.
+struct ah_index_key{};
+struct ah_reference_key{};
+struct ah_typeAndId_key{};
+struct ah_type_key{};
+struct ah_id_key;
+struct ah_handle_key{};
+struct ah_saved_key{};
 
 // ActionHistory_set composite key for a unique id.
 struct comp_actionUID_key:composite_key<
 	ActionHistory,
-	BOOST_MULTI_INDEX_MEMBER(ActionHistory, int, _pDoc),
-	BOOST_MULTI_INDEX_MEMBER(ActionHistory, int, _actionIndex),
-	BOOST_MULTI_INDEX_MEMBER(ActionHistory, int, _actionEntryID)
+	BOOST_MULTI_INDEX_MEMBER(ActionHistory, int, _index),
+	BOOST_MULTI_INDEX_MEMBER(ActionHistory, int, _entry)
 >{};
 
-// ActionHistory_set tag.
-struct ahIndex_key{};
-
-// ActionHistory_set composite key.
-struct comp_docindex_key:composite_key<
+struct comp_typeId_key:composite_key<
 	ActionHistory,
-	BOOST_MULTI_INDEX_MEMBER(ActionHistory, int, _pDoc),
-	BOOST_MULTI_INDEX_MEMBER(ActionHistory, int, _actionIndex)
+	BOOST_MULTI_INDEX_MEMBER(ActionHistory, int, type),
+	BOOST_MULTI_INDEX_MEMBER(ActionHistory, int, id)
 >{};
 
-
-// ActionHistory_set tag.
-struct ahSavepoint_key{}; /* Index Tag */
-
-// ActionHistory_set composite key.
-struct comp_savepoint_key:composite_key<
-	ActionHistory,
-	BOOST_MULTI_INDEX_MEMBER(ActionHistory, int, _pDoc),
-	BOOST_MULTI_INDEX_MEMBER(ActionHistory, bool, _isSavePoint)
->{};
-
-// ActionHistory_set tag.
-struct ahReference_key{};
-
-// ActionHistory_set composite key
-struct comp_reference_key:composite_key<
-	ActionHistory,
-	BOOST_MULTI_INDEX_MEMBER(ActionHistory, int, _pDoc),
-	BOOST_MULTI_INDEX_MEMBER(ActionHistory, int, _referenceIndex)
->{};
-
-// ActionHistory_set tag.
-struct ahHandle_key{};
-
-// ActionHistory_set composite key.
-struct comp_handle_key:composite_key<
-	ActionHistory,
-	BOOST_MULTI_INDEX_MEMBER(ActionHistory, int, _pDoc),
-	BOOST_MULTI_INDEX_MEMBER(ActionHistory, int, _actionHandle)
->{};
-
-
-/* Multi Index for Marker_History tracking */
+/* Multi Index for Action History tracking */
 typedef multi_index_container<
 	ActionHistory,
 	indexed_by<
 		ordered_unique< comp_actionUID_key >,
-		ordered_non_unique< tag<ahIndex_key>, comp_docindex_key >,
-		ordered_non_unique< tag<ahSavepoint_key>, comp_savepoint_key >,
-		ordered_non_unique< tag<ahReference_key>, comp_reference_key >,
-		ordered_non_unique< tag<ahHandle_key>, comp_handle_key >
+		ordered_non_unique<	tag<ah_index_key>, member<ActionHistory, int, &ActionHistory::_index > >,
+		ordered_non_unique<	tag<ah_reference_key>, member<ActionHistory, int, &ActionHistory::_referenceIndex >	>,
+		ordered_non_unique< tag<ah_typeAndId_key>, comp_typeId_key >,
+		ordered_non_unique< tag<ah_type_key>, member<ActionHistory, int, &ActionHistory::type > >,
+		ordered_non_unique< tag<ah_id_key>, member<ActionHistory, int, &ActionHistory::id > >,
+		ordered_non_unique< tag<ah_handle_key>, member<ActionHistory, int, &ActionHistory::handle > >,
+		ordered_non_unique< tag<ah_saved_key>, member<ActionHistory, bool, &ActionHistory::isSaved > >
 	>
 > ActionHistory_set;
 
 //  Action History set index types.
-typedef ActionHistory_set::nth_index<1>::type ahs_by_docAction;
-typedef ActionHistory_set::nth_index<2>::type ahs_by_docSavePoint;
-typedef ActionHistory_set::nth_index<3>::type ahs_by_docReference;
-typedef ActionHistory_set::nth_index<4>::type ahs_by_docHandle;
+typedef ActionHistory_set::nth_index<0>::type ahs_by_uid;
+typedef ActionHistory_set::index<ah_index_key>::type ahs_by_action;
+typedef ActionHistory_set::index<ah_reference_key>::type ahs_by_reference;
+typedef ActionHistory_set::index<ah_typeAndId_key>::type ahs_by_typeAndId;
+typedef ActionHistory_set::index<ah_type_key>::type ahs_by_type;
+typedef ActionHistory_set::index<ah_id_key>::type ahs_by_id;
+typedef ActionHistory_set::index<ah_handle_key>::type ahs_by_handle;
+typedef ActionHistory_set::index<ah_saved_key>::type ahs_by_saved;
 
 //  Index iterator types.
-typedef ahs_by_docAction::iterator docAction_iter;
-typedef ahs_by_docReference::iterator docReference_iter;
-typedef ahs_by_docSavePoint::iterator docSavePoint_iter;
-typedef ahs_by_docHandle::iterator docHandle_iter;
+typedef ahs_by_uid::iterator uid_iter;
+typedef ahs_by_action::iterator action_iter;
+typedef ahs_by_reference::iterator reference_iter;
+typedef ahs_by_typeAndId::iterator typeAndId_iter;
+typedef ahs_by_type::iterator type_iter;
+typedef ahs_by_id::iterator id_iter;
+typedef ahs_by_handle::iterator handle_iter;
+typedef ahs_by_saved::iterator saved_iter;
 
 //  This plugins action history set.
-class PluginActionHistory {
-
+class DocumentActionHistory {
 		int _currDoc;
-		int _currActionIndex;
-		int _currReferenceIndex;
-		int _currHandleIndex;
-
 		int _prevActionIndex;
 		int _actionEntryID;
-
 
 	public:
 		ActionHistory_set ahs;
 
-		ahs_by_docAction& action_index;			// = ahs.get<ahIndex_key>();
-		ahs_by_docSavePoint& savepoint_index;	// = ahs.get<ahSavepoint_key>();
-		ahs_by_docReference& reference_index;	// = ahs.get<ahReference_key>();
-		ahs_by_docHandle& handle_index;			// = ahs.get<ahHandle_key>();
+		//  Indexes < see the constructor >
+		ahs_by_action& action_index;
+		ahs_by_reference& reference_index;
+		ahs_by_typeAndId& typeAndId_index;
+		ahs_by_type& type_index;
+		ahs_by_id& id_index;
+		ahs_by_handle& handle_index;
+		ahs_by_saved& saved_index;
 
-		docAction_iter a_iter;
-		docReference_iter r_iter;
-		docSavePoint_iter s_iter;
-		docHandle_iter h_iter;
+		//  Iterators
+		action_iter a_iter;
+		reference_iter r_iter;
+		typeAndId_iter typeId_iter;
+		type_iter t_iter;
+		id_iter i_iter;
+		handle_iter h_iter;
+		saved_iter s_iter;
 
-		PluginActionHistory()
-			:_currDoc(0), _currActionIndex(0), _currReferenceIndex(0), _currHandleIndex(0),
+		// Contructor sets the indexes.
+		DocumentActionHistory(int pDoc)
+			:_currDoc(pDoc),
 			_prevActionIndex(0), _actionEntryID(0),
-			action_index( ahs.get<ahIndex_key>() ),
-			savepoint_index( ahs.get<ahSavepoint_key>() ),
-			reference_index( ahs.get<ahReference_key>() ),
-			handle_index( ahs.get<ahHandle_key>() )
+			action_index( ahs.get<ah_index_key>() ),
+			reference_index( ahs.get<ah_reference_key>() ),
+			typeAndId_index( ahs.get<ah_typeAndId_key>() ),
+			type_index( ahs.get<ah_type_key>() ),
+			id_index( ahs.get<ah_id_key>() ),
+			handle_index( ahs.get<ah_handle_key>() ),
+			saved_index( ahs.get<ah_saved_key>() )
 		{};
 
-		bool setTargetIndex( int pDoc, int actionIndex );
-		bool setReferenceIndex( int refIndex );
-		bool setHandleIndex( int handleIndex );
-		bool insertAction_at_CurrIndex( int action, int actionhandle, int referenceIndex, bool isSavePoint = false );
-		bool insertAction_at_NextIndex( int action, int actionHandle, int referenceIndex, bool isSavePoint );
-		std::pair<ActionHistory_set::iterator, bool> insertAction( int pDoc, int actionIndex, int actionEntryID,
-			int action, int actionHandle, int referenceIndex, bool isSavePoint );
+		bool setActionIndex( int actionIndex );
+		bool setReferenceIndex( int reference );
+		bool set_compTypeAndIDIndex( int type, int id );
+		bool setTypeIndex( int type );
+		bool setIdIndex( int id );
+		bool setHandleIndex( int handle );
+		bool setSavedIndex( bool saved );
+		bool insert_at_CurrActionIndex( HistoryAction* action, int referenceIndex );
+		bool insert_at_NextActionIndex( HistoryAction* action, int referenceIndex );
+		std::pair<ActionHistory_set::iterator, bool> insertAction( int actionIndex, int actionEntryID,
+			int referenceIndex, HistoryAction* action );
 		void truncateActions();
+		void truncateActionsAtNextIndex();
 	};
 
 } // End: namespace action_history

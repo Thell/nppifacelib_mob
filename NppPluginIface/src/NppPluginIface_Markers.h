@@ -46,14 +46,6 @@ namespace markers {
 const int NB_MAX_PLUGINMARKERS = 16;
 const int SC_MARK_AVAILABLE = 28;
 
-//  Actions for Plugin Line Markers stored in the history tracker.
-enum PLM_ACTION {
-	PLM_MARKERADD,		// Used to match up with SCI_MARKERADD
-	PLM_MARKERDELETE,	// Used to match up with SCI_MARKERDELETE
-	PLM_MARKERFORWARD,	// Marker already exists on the line and is reused in a new action.
-	PLM_SAVEPOINT,		// Scintilla Document savepoint.
-};
-
 //  N++ Margins
 enum MARGIN {
 	MARGIN_NONE = -1,

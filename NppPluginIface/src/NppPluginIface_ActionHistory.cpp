@@ -31,13 +31,9 @@ namespace actionhistory{
 
 //  Sets the current target doc and index values that the action_iter uses.
 //  Returns true if actions already exists at the index.
-bool PluginActionHistory::setTargetIndex( int pDoc, int actionIndex )
+bool DocumentActionHistory::setActionIndex( int actionIndex )
 {
-	_currDoc = pDoc;
-	_currActionIndex = actionIndex;
-
-	// Assign the iterator.
-	a_iter = action_index.find( boost::make_tuple( _currDoc, _currActionIndex ) );
+	a_iter = action_index.find( actionIndex );
 
 	if ( a_iter != action_index.end() ) {
 		return ( true );
@@ -47,13 +43,9 @@ bool PluginActionHistory::setTargetIndex( int pDoc, int actionIndex )
 }
 
 //  Sets the current reference index r_iter uses on reference_index.
-//  Returns true if actions already exist at the index.
-bool PluginActionHistory::setReferenceIndex( int refIndex )
+bool DocumentActionHistory::setReferenceIndex( int reference )
 {
-	_currReferenceIndex = refIndex;
-
-	//  Update the iterator.
-	r_iter = reference_index.find( boost::make_tuple( _currDoc, _currReferenceIndex ) );
+	r_iter = reference_index.find( reference );
 
 	if ( r_iter != reference_index.end() ) {
 		return ( true );
@@ -62,13 +54,47 @@ bool PluginActionHistory::setReferenceIndex( int refIndex )
 	return ( false );
 }
 
-//  Sets the current action handle index that h_iter uses on handle_index.
-bool PluginActionHistory::setHandleIndex( int handleIndex )
+//  Sets the current composite key index for type and id, as well as both individual type and
+//  id target indexes.
+bool DocumentActionHistory::set_compTypeAndIDIndex( int type, int id )
 {
-	_currHandleIndex = handleIndex;
+	typeId_iter = typeAndId_index.find( boost::make_tuple( type, id ) );
 
-	//  Update the iterator.
-	h_iter = handle_index.find( boost::make_tuple( _currDoc, _currHandleIndex ) );
+	if ( typeId_iter != typeAndId_index.end() ) {
+		return ( true );
+	}
+
+	return ( false );
+}
+
+//  Sets the current action type index that t_iter uses on type_index.
+bool DocumentActionHistory::setTypeIndex( int type )
+{
+	t_iter = type_index.find( type );
+
+	if ( t_iter != type_index.end() ) {
+		return ( true );
+	}
+
+	return ( false );
+}
+
+//  Sets the current action id index that i_iter uses on id_index.
+bool DocumentActionHistory::setIdIndex( int id )
+{
+	i_iter = id_index.find( id );
+
+	if ( i_iter != id_index.end() ) {
+		return ( true );
+	}
+
+	return ( false );
+}
+
+//  Sets the current action handle index that h_iter uses on handle_index.
+bool DocumentActionHistory::setHandleIndex( int handle )
+{
+	h_iter = handle_index.find( handle );
 
 	if ( h_iter != handle_index.end() ) {
 		return ( true );
@@ -77,9 +103,21 @@ bool PluginActionHistory::setHandleIndex( int handleIndex )
 	return ( false );
 }
 
+//  Sets the current saved action index that s_iter uses on saved_index.
+bool DocumentActionHistory::setSavedIndex( bool saved )
+{
+	s_iter = saved_index.find( saved );
+
+	if ( s_iter != saved_index.end() ) {
+		return ( true );
+	}
+
+	return ( false );
+}
+
 //  Adds an action item to history set for the current targeted Scintilla Document at the
 //  current Scintilla action index.  This does not allow insertion at an earlier index.
-bool PluginActionHistory::insertAction_at_CurrIndex( int action, int actionHandle, int referenceIndex, bool isSavePoint )
+bool DocumentActionHistory::insert_at_CurrActionIndex( HistoryAction* action, int referenceIndex )
 {
 	int actionIndex = npp_plugin::actionindex::getCurrActionIndex( _currDoc );
 	if ( actionIndex == _prevActionIndex ) {
@@ -91,7 +129,7 @@ bool PluginActionHistory::insertAction_at_CurrIndex( int action, int actionHandl
 	}
 
 	std::pair<ActionHistory_set::iterator, bool> retVal = 
-		insertAction( _currDoc, actionIndex, _actionEntryID, action, actionHandle, referenceIndex, isSavePoint );
+		insertAction( actionIndex, _actionEntryID, referenceIndex, action );
 
 
 	if (! retVal.second ) {
@@ -104,7 +142,7 @@ bool PluginActionHistory::insertAction_at_CurrIndex( int action, int actionHandl
 
 //  Adds an action item to history set for the current targeted Scintilla Document at the
 //  next Scintilla action index.  Useful when working with SC_MOD_BEFORE...  notifications.
-bool PluginActionHistory::insertAction_at_NextIndex( int action, int actionHandle, int referenceIndex, bool isSavePoint )
+bool DocumentActionHistory::insert_at_NextActionIndex( HistoryAction* action, int referenceIndex )
 {
 	int actionIndex = ( npp_plugin::actionindex::getCurrActionIndex( _currDoc ) + 1 );
 	if ( actionIndex == _prevActionIndex ) {
@@ -116,7 +154,7 @@ bool PluginActionHistory::insertAction_at_NextIndex( int action, int actionHandl
 	}
 
 	std::pair<ActionHistory_set::iterator, bool> retVal =
-		insertAction( _currDoc, actionIndex, _actionEntryID, action, actionHandle, referenceIndex, isSavePoint );
+		insertAction( actionIndex, _actionEntryID, referenceIndex, action );
 
 
 	if (! retVal.second ) {
@@ -132,30 +170,62 @@ bool PluginActionHistory::insertAction_at_NextIndex( int action, int actionHandl
 //  This allows insertion at any index, so be careful.
 //  std::pair<ActionHistory_set::iterator, bool> is returned.  If bool is false insertion failed
 //  at the ActionHistory returned, else the iterator points to the inserted iterator.
-std::pair<ActionHistory_set::iterator, bool> PluginActionHistory::insertAction( int pDoc, int actionIndex, int actionEntryID, int action,
-									   int actionHandle, int referenceIndex, bool isSavePoint )
+std::pair<ActionHistory_set::iterator, bool> DocumentActionHistory::insertAction(
+	int actionIndex, int actionEntryID,int referenceIndex, HistoryAction* action )
 {
 	std::pair<ActionHistory_set::iterator, bool> retVal = ahs.insert(
-		ActionHistory( pDoc, actionIndex, actionEntryID, action, actionHandle, referenceIndex, isSavePoint )
+		ActionHistory(
+			actionIndex,
+			actionEntryID,
+			referenceIndex,
+			action->type,
+			action->id,
+			action->handle,
+			action->preState,
+			action->postState,
+			action->posStart,
+			action->posEnd,
+			action->isSaved
+		)
 	);
 
 	return ( retVal );
 }
 
 //  Removes all actions item from the marker history after the current index.
-void PluginActionHistory::truncateActions()
+void DocumentActionHistory::truncateActions()
 {
 	int targetIndex = npp_plugin::actionindex::getCurrActionIndex( _currDoc );
 
-	a_iter = action_index.find( boost::make_tuple( _currDoc, targetIndex ) );
+	a_iter = action_index.find( targetIndex );
 	
 	if ( a_iter != action_index.end() ) {
 		action_index.erase( a_iter, action_index.end() );
+		_prevActionIndex = -1;
+		_actionEntryID = 0;
 	}
 	else {
 		bool dbgStop = true;
 	}
 }
+
+//  Removes all actions item from the marker history at the next index.
+void DocumentActionHistory::truncateActionsAtNextIndex()
+{
+	int targetIndex = npp_plugin::actionindex::getCurrActionIndex( _currDoc );
+
+	a_iter = action_index.find( targetIndex + 1 );
+	
+	if ( a_iter != action_index.end() ) {
+		action_index.erase( a_iter, action_index.end() );
+		_prevActionIndex = -1;
+		_actionEntryID = 0;
+	}
+	else {
+		bool dbgStop = true;
+	}
+}
+
 
 } // End: namespace action_history
 

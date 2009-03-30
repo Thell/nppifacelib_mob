@@ -26,6 +26,9 @@
 
 #include "NppPluginIface_DocTabMap.h"
 
+#include <set>
+#include <map>
+
 //  <--- Notepad++ Scintilla Components for BufferID to pDoc --->
 #define TIXMLA_USE_STL
 #include "Buffer.h"
@@ -85,6 +88,11 @@ typedef DocTab_set::index<dt_visible_key>::type dts_by_visibleTab;
 //  The one and only DocTab_set container.
 DocTab_set dts;
 
+//  A set for storing active and ready open documents
+std::set<int> open_docs;
+
+//  A map for storing buffer id to doc id.  Usefull for doc open/close operations.
+std::map< int, int > buff2doc_map;
 
 } // End namespace doctabmap_mic
 
@@ -98,7 +106,10 @@ void update_DocTabMap()
 {
 	//  Since there isn't a buffer-deactivate message to remove an entry we empty the set and
 	//  rebuild on buffer activated messages.
-	if ( dts.size() > 0 ) dts.clear();
+	if ( dts.size() > 0 ) {
+		dts.clear();
+		open_docs.clear();
+	}
 
 	//  Populate the DocTab_set
 	//  The tab and buffer ID aren't really needed, yet I believe there may be some other
@@ -118,6 +129,10 @@ void update_DocTabMap()
 				dts.insert(
 					DocTab( targetView, tab, pBuff, pDoc, isVisible)
 				);
+				open_docs.insert( (int)pDoc );
+				if ( buff2doc_map.find( (int)pBuff ) == buff2doc_map.end() ) {
+					buff2doc_map[ (int)pBuff ] = (int)pDoc;
+				}
 			}
 		}
 	}
@@ -132,6 +147,16 @@ int getVisibleDocId_by_View( int view )
 	DocTab _DocTab = *(visibleTab_index.find( boost::make_tuple( hViewByInt( view ), true ) ) );
 
 	return ( _DocTab._pDoc );
+}
+
+//  Returns the Scintilla Document ID matching a buffer ID.
+int getDocIdFromBufferId( int bufferID ) { return ( buff2doc_map[bufferID] ); }
+
+//  Returns true if a document is currently open and ready.
+bool fileIsOpen( int pDoc )
+{
+	if ( open_docs.find( pDoc ) != open_docs.end() ) return ( true );
+	else return ( false );
 }
 
 } // End namespace: doctabmap

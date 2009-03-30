@@ -36,6 +36,8 @@ namespace doctabmap {
 
 void update_DocTabMap();
 int getVisibleDocId_by_View( int view );
+int getDocIdFromBufferId( int bufferID );
+bool fileIsOpen( int pDoc );
 
 
 } // End namespace: doctabmap

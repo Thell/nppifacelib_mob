@@ -52,15 +52,18 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD reasonForCall, LPVOID /*lpReserved*/
 		npp_plugin::initPlugin(TEXT("Change Markers"), hModule);
 
 		// <--- Base menu function items setup --->
-		setPluginFuncItem(TEXT("Jump: Prev Change"), p_cm::jumpPrevChange,p_cm::CMD_JUMPPREV);
-		setPluginFuncItem(TEXT("Jump: Next Change"), p_cm::jumpNextChange,p_cm::CMD_JUMPNEXT);
+		setPluginFuncItem(TEXT("Jump: Prev Change"), p_cm::jumpChangePrev,p_cm::CMD_JUMPCHANGEPREV);
+		setPluginFuncItem(TEXT("Jump: Next Change"), p_cm::jumpChangeNext,p_cm::CMD_JUMPCHANGENEXT);
+		setPluginFuncItem(TEXT("Jump: Changed Line Up"), p_cm::jumpLineUp,p_cm::CMD_JUMPLINEUP);
+		setPluginFuncItem(TEXT("Jump: Changed Line Down"), p_cm::jumpLineDown,p_cm::CMD_JUMPLINEDOWN);
 		setPluginFuncItem(TEXT(""), NULL);	//  A separator line.
 		setPluginFuncItem(TEXT("Display: Line Number Margin"), p_cm::displayWithLineNumbers, p_cm::CMD_LINENUMBER , true);
 		setPluginFuncItem(TEXT("Display: Bookmark Margin"), p_cm::displayWithBookMarks, p_cm::CMD_BOOKMARK, true);
 		setPluginFuncItem(TEXT("Display: Plugin Marker Margin"), p_cm::displayInPluginMargin, p_cm::CMD_PLUGIN, true);
 		setPluginFuncItem(TEXT("Display: As Line Highlight"), p_cm::displayAsHighlight, p_cm::CMD_HIGHLIGHT, true);
 		setPluginFuncItem(TEXT(""), NULL);	//  A separator line.
-		setPluginFuncItem(TEXT("Disable"), p_cm::disable, p_cm::CMD_DISABLE, true);
+		setPluginFuncItem(TEXT("Disable Tracking for this Document"), p_cm::disableDoc, p_cm::CMD_DISABLEDOC, true);
+		setPluginFuncItem(TEXT("Disable Plugin"), p_cm::disablePlugin, p_cm::CMD_DISABLEPLUGIN, true);
 		setPluginFuncItem(TEXT("About..."), npp_plugin::About_func);
 
 #ifdef NPP_PLUGININTERFACE_CMDMAP_EXTENSION_H
@@ -117,10 +120,6 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 	 *  
 	 *  Notifications can be filtered, and language specific handlers called using a
 	 *  Namespace::Function() call.
-	 *
-	 *  To route a notification to one of this plugin's registered lexers use the
-	 *  external_lexer::getSCILexerIDByName("LexerName") and compare with the  value returned
-	 *  by messageProc(SCI_GETLEXER, 0, 0).
 	 *
 	 */
 	using namespace npp_plugin;
@@ -201,8 +200,14 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 		npp_plugin::hCurrViewNeedsUpdate();
 		break;
 
+	case NPPN_FILEBEFORECLOSE:
+		npp_plugin::hCurrViewNeedsUpdate();
+		p_cm::fileBeforeCloseHandler( notifyCode );
+		break;
+
 	case NPPN_FILESAVED:
-		p_cm::fileSaveHandler(notifyCode);
+		npp_plugin::hCurrViewNeedsUpdate();
+		p_cm::fileSaveHandler();
 		break;
 
 	default:
