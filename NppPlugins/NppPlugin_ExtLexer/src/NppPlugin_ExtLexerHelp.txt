@@ -1,0 +1,451 @@
+Welcome!
+
+This file documents some helpful information for developing your own language lexer file for use
+with the Notepad++ External Lexer Plugin.
+
+You may want to view this file using a language with folding.
+
+You need to have the latest source files from Notepad++'s downloads area ( at least version 5.1.4 ).
+
+
+Here are the primary sections:
+
+	I.		Getting familiar with the plugin.
+	II.		Converting an existing Scintilla lexer to an external lexer.
+	III.	Converting a Notepad++ User Defined Language to an external lexer.
+	IV.		Creating a new custom language lexer.
+	V.		Problems and issues with using external lexers.
+	VI.		Closing comments.
+	
+	It is assumed that you have your development environment setup with Notepad++, Scintilla,
+	and NppExternalLexer_Plugin project files.
+
+====================================================================================================	
+I.		Getting familiar with the plugins layout and functions.
+{
+
+	This plugin was developed using Microsoft's free Visual C++ Express 2008.  It is based on code
+	found in various other plugins and plugin templates.  For more on the history and credits see
+	the history.txt file included with this plugin.
+	
+	This plugins makes extensive use of namespace seperation to avoid global conflicts and to
+	make the code ( hopefully ) more understandable.
+	
+	There are four primary sections of code that make up the Notepad++ External Lexer Plugin.
+		
+	The plugin interface:
+	{
+		NppPluginInterface simplifies registering the plugin with the Notepad++ Plugins Manager as
+		well as exposing some commonly used functions.  The namespace is Npp_Plugin_Interface and
+		the common alias is pIface.  The functions available are meant to assist with setting and
+		retrieving Notepad++ data and other than the initial registering of the plugin and
+		retrieval of Notepad++ handles you most likely won't need to know them at all.  One nifty
+		thing you can do is over-ride the getPluginFuncArray() call made by Notepad++'s Plugin
+		Manager by altering the namespace pointer used at the top of the NppExtLexer_Plugin.cpp.
+		
+		
+		init(tstring name, HANDLE hModule);			//  Initialize Plugin.
+		setPluginFuncItem(tstring Name, PFUNCPLUGINCMD pFunction, int cmdID = NULL,
+		setNppReady();				//  Sets flag when Notepad++ is done with start up.
+		hCurrViewNeedsUpdate();		//  Sets flag to update hCurrView.
+		hModule();					//  Plugin module's handle.
+		hNpp();						//  Returns the main Notepad++ handle.
+		hMainView();				//  Returns handle used in messaging the main view.
+		hSecondView();				//  Returns handle used in messaging the secondary view.
+		hCurrView();				//  Returns handle for the currently focused view.
+		intCurrView();				//  Returns 0 for main view and 1 for second view.
+		isNppReady();				//  Returns Notepad++ initialization state.
+		getPluginFuncCount();		//  Returns the size of the Function vector.
+		getPluginFuncVector();		//  Return a copy of the plugins function vector.
+		getPluginFuncArray();		//  Returns this plugin's Function vector as an array.
+		
+	}
+	
+	The lexer interface:
+	{
+		NppExtLexerInterface extends the NppPluginInterface for use specifically with lexers.  It
+		allows simple registration of multiple lexers for a single plugin.  Its' namespace is
+		Npp_ExtLexer_Interface and has the common alias of lIface.  Other than registering the lexer
+		you most likely won't need to know them, except for the getSCILexerIDByName which is a great
+		help when writing notification handlers.
+		
+		//  Setup a lexer definition.
+		init(std::string Name, tstring statusText, NppExtLexerFunction pLexOrFold,
+									PFUNCPLUGINCMD pMenuDlg);
+
+		//  Store additional lexer FuncItem commands.
+		setLexerFuncItem(tstring Name, PFUNCPLUGINCMD pFunction, int cmdID = NULL,
+									bool init2Check = false, ShortcutKey* pShKey = NULL);
+
+		//  Returns the Scintilla lexer ID for this vector index.
+		getSCILexerIDByIndex( int index );
+	
+		//  Returns the Scintilla lexer ID for vector index matching name.
+		getSCILexerIDByName( std::string name );
+	
+		//  Return a copy of this extensions Function vector.
+		getLexerFuncVector();
+	
+		//  Return a copy of this extensions Lexer vector.
+		getLexerDetailVector();
+
+		//  'Virtualize' the base plugin's getPluginFuncCount() function.
+		getPluginFuncCount();
+	
+		//  'Virtualize' the base plugin's getPluginFuncArray() function.
+		getPluginFuncArray();
+	}
+
+	The main plugin:
+	{
+		This is where the main non-language specific code resides.  You register your external
+		lexer in the DLLMAIN function, and add language specific notification and message handlers.
+		That's about it.  If you aren't doing custom highlighting, dialogs, and so on it is simply
+		a matter of adding your header include, giving your namespace a short alias and registering
+		your lexer in the DLLMAIN with:
+
+		lIface::init( "Template*", TEXT("Lexer Template File. *Ext"), l_template::LexOrFold,
+			l_template::menuDlg);
+
+		The namespace for the plugin is NppExtLexer_Plugin, with an alias of plugin.  You'll also
+		notice a namespace of v_getfuncarray.  This acts as a pointer ( much like a symbolic link
+		setup ) that allows the lexer interface to over-ride the standard plugin interface's
+		response to Notepad++'s getFuncArray() call.  Note that unless you have a reason to change
+		it it should be pointed at lIface.  One cool thing that the lexer's getFuncArray() response
+		does, is that it orders the registered lexers in alpha order then adds a separator and the
+		plugins main menu items ( by default 'Help.txt' and 'About' ).
+	}
+	
+	The language lexer:
+	{
+		This is where the colouring and folding logic for your language lives.  Create a namespace
+		with the convention of NppExtLexer_'yourlangname'.  You need to declare the menu and
+		foldOrLex functions that you registered in the main plugin's DLLMAIN.  Other than that you
+		pretty much can just copy other lexer code here and it should work.
+	}
+	
+	There is also one major external piece to this puzzle; the language styles xml file.  It is
+	located in the Notepad++ plugin's config directory under the name of NppExternalLexers.xml.  The
+	layout is very simple and you only need define the Language node and for each language node a
+	matching LexerStyles node.  These are the same node configurations you would find in Notepad++'s
+	langs.xml and stylers.xml.
+
+}
+
+====================================================================================================
+II.		Converting an existing Scintilla lexer to an external lexer. < Easy >
+{
+	This is extremely easy and consists of copying and then modifying until your satisfied.  For
+	this example we will convert Scintilla's LexConf.cxx to 'Apache Conf*' and a user defined style and
+	some comment folding.
+
+	1.	Using whatever method you like, copy the NppExtLexer_Template .h and .cpp files in the
+		projects src folder to files named NppExtLexer_ApacheConf .h and .cpp and add them to your
+		project.
+		
+	2.  Do a find/replace on '_Template' to '_ApacheConf'
+	
+	3.	Open the NppExtLexer_Plugin.cpp file and do a search for '===>'.
+		a.	Lexer Header ===>  #include "NppExtLexer_ApacheConf.h"
+		b.	Lexer Namespace ===> namespace l_conf = NppExtLexer_ApacheConf;
+		c.	Initialization Statement ===> 
+											lIface::init( "Apache Conf*",
+												TEXT("Apache Config File. *Ext"),
+												l_conf::LexOrFold,
+												l_conf::menuDlg );
+		
+		* We don't have any special notification or message handlers.
+
+	4.	Locate and copy the contents of Scintilla's LexConf.cxx file to NppExtLexer.Conf.cpp.  Paste
+		above the existing Colour_Doc function.  Do a find/replace to alter all of the SCE_CONF_
+		strings in this doc to sID:: ( if you look at the namespace alias you'll see this points
+		to your lexer's Styles namespace.  sID == style ID
+		
+		Do some cleanup while your here; remove or comment out the:
+			extra #include statements,
+			#ifdef SCI_NAMSPACE statements,
+			confWordListDesc declaration
+			LexerModule lmConf declaration.
+	
+	5.  Delete the existing Colourise_Doc function and rename ColouriseConfDoc to Colourise_Doc.
+	
+	6.  Locate and copy the SCE_CONF #define entries from SciLexer.h to NppExtLexer_Conf.h.  Paste
+		into the Styles namespace area.  Do find/replace to get the following styles:
+		
+		const int DEFAULT = 0;
+		const int COMMENT = 1;
+		const int NUMBER = 2;
+		const int IDENTIFIER = 3;
+		const int EXTENSION = 4;
+		const int PARAMETER = 5;
+		const int STRING = 6;
+		const int OPERATOR = 7;
+		const int IP = 8;
+		const int DIRECTIVE = 9;
+		const int USERDEF = 10;		// Manually add this.
+
+		
+	8.  Since the apache lexer isn't one of the Notepad++ default language ( I think most people use
+		the 'Shell' language - which is actually Scintilla's LexBash ) we need to create our own
+		Language and style node in NppExternalLexers.xml, if your duplicating an existing Notepad++
+		you'd copy your language and style nodes from the xml files in the Notepad++ plugins
+		directory.  We'll copy the keywords from Scite's conf.properties file.
+		
+		Look at your Colourise_Doc function and you'll see two WordList statements, this means there
+		need to be 2 Keywords elements in our xml file.  And one extra one just for our own use.
+		Like this:
+		
+		<!--  Put the following in the Languages Node -->
+		<Language name="Apache Conf*" ext="conf" commentLine="#">
+			<Keywords name="0">acceptmutex acceptpathinfo accessconfig accessfilename action addalt addaltbyencoding addaltbytype addcharset adddefaultcharset adddescription addencoding addhandler addicon addiconbyencoding addiconbytype addinputfilter addlanguage addmodule addmoduleinfo addoutputfilter addoutputfilterbytype addtype agentlog alias aliasmatch all allow allowconnect allowencodedslashes allowoverride anonymous anonymous_authoritative anonymous_logemail anonymous_mustgiveemail anonymous_nouserid anonymous_verifyemail assignuserid authauthoritative authdbauthoritative authdbgroupfile authdbmauthoritative authdbmgroupfile authdbmtype authdbmuserfile authdbuserfile authdigestalgorithm authdigestdomain authdigestfile authdigestgroupfile authdigestnccheck authdigestnonceformat authdigestnoncelifetime authdigestqop authdigestshmemsize authgroupfile authldapauthoritative authldapbinddn authldapbindpassword authldapcharsetconfig authldapcomparednonserver authldapdereferencealiases authldapenabled authldapfrontpagehack authldapgroupattribute authldapgroupattributeisdn authldapremoteuserisdn authldapurl authname authtype authuserfile bindaddress browsermatch browsermatchnocase bs2000account bufferedlogs cachedefaultexpire cachedirlength cachedirlevels cachedisable cacheenable cacheexpirycheck cachefile cacheforcecompletion cachegcclean cachegcdaily cachegcinterval cachegcmemusage cachegcunused cacheignorecachecontrol cacheignoreheaders cacheignorenolastmod cachelastmodifiedfactor cachemaxexpire cachemaxfilesize cacheminfilesize cachenegotiateddocs cacheroot cachesize cachetimemargin cgimapextension charsetdefault charsetoptions charsetsourceenc checkspelling childperuserid clearmodulelist contentdigest cookiedomain cookieexpires cookielog cookiename cookiestyle cookietracking coredumpdirectory customlog dav davdepthinfinity davlockdb davmintimeout defaulticon defaultlanguage defaulttype define deflatebuffersize deflatecompressionlevel deflatefilternote deflatememlevel deflatewindowsize deny directory directoryindex directorymatch directoryslash documentroot dumpioinput dumpiooutput enableexceptionhook enablemmap enablesendfile errordocument errorlog example expiresactive expiresbytype expiresdefault extendedstatus extfilterdefine extfilteroptions fancyindexing fileetag files filesmatch forcelanguagepriority forcetype forensiclog from group header headername hostnamelookups identitycheck ifdefine ifmodule imapbase imapdefault imapmenu include indexignore indexoptions indexorderdefault isapiappendlogtoerrors isapiappendlogtoquery isapicachefile isapifakeasync isapilognotsupported isapireadaheadbuffer keepalive keepalivetimeout languagepriority ldapcacheentries ldapcachettl ldapconnectiontimeout ldapopcacheentries ldapopcachettl ldapsharedcachefile ldapsharedcachesize ldaptrustedca ldaptrustedcatype limit limitexcept limitinternalrecursion limitrequestbody limitrequestfields limitrequestfieldsize limitrequestline limitxmlrequestbody listen listenbacklog loadfile loadmodule location locationmatch lockfile logformat loglevel maxclients maxkeepaliverequests maxmemfree maxrequestsperchild maxrequestsperthread maxspareservers maxsparethreads maxthreads maxthreadsperchild mcachemaxobjectcount mcachemaxobjectsize mcachemaxstreamingbuffer mcacheminobjectsize mcacheremovalalgorithm mcachesize metadir metafiles metasuffix mimemagicfile minspareservers minsparethreads mmapfile modmimeusepathinfo multiviewsmatch namevirtualhost nocache noproxy numservers nwssltrustedcerts nwsslupgradeable options order passenv pidfile port protocolecho proxy proxybadheader proxyblock proxydomain proxyerroroverride proxyiobuffersize proxymatch proxymaxforwards proxypass proxypassreverse proxypreservehost proxyreceivebuffersize proxyremote proxyremotematch proxyrequests proxytimeout proxyvia qsc readmename redirect redirectmatch redirectpermanent redirecttemp refererignore refererlog removecharset removeencoding removehandler removeinputfilter removelanguage removeoutputfilter removetype requestheader require resourceconfig rewritebase rewritecond rewriteengine rewritelock rewritelog rewriteloglevel rewritemap rewriteoptions rewriterule rlimitcpu rlimitmem rlimitnproc satisfy scoreboardfile script scriptalias scriptaliasmatch scriptinterpretersource scriptlog scriptlogbuffer scriptloglength scriptsock securelisten sendbuffersize serveradmin serveralias serverlimit servername serverpath serverroot serversignature servertokens servertype setenv setenvif setenvifnocase sethandler setinputfilter setoutputfilter singlelisten ssiendtag ssierrormsg ssistarttag ssitimeformat ssiundefinedecho sslcacertificatefile sslcacertificatepath sslcarevocationfile sslcarevocationpath sslcertificatechainfile sslcertificatefile sslcertificatekeyfile sslciphersuite sslengine sslmutex ssloptions sslpassphrasedialog sslprotocol sslproxycacertificatefile sslproxycacertificatepath sslproxycarevocationfile sslproxycarevocationpath sslproxyciphersuite sslproxyengine sslproxymachinecertificatefile sslproxymachinecertificatepath sslproxyprotocol sslproxyverify sslproxyverifydepth sslrandomseed sslrequire sslrequiressl sslsessioncache sslsessioncachetimeout sslusername sslverifyclient sslverifydepth startservers startthreads suexecusergroup threadlimit threadsperchild threadstacksize timeout transferlog typesconfig unsetenv usecanonicalname user userdir virtualdocumentroot virtualdocumentrootip virtualhost virtualscriptalias virtualscriptaliasip win32disableacceptex xbithack</Keywords>
+			<Keywords name="1">on off standalone inetd force-response-1.0 downgrade-1.0 nokeepalive indexes includes followsymlinks none x-compress x-gzip</Keywords>
+			<Keywords name="2"></Keywords>
+		</Language>
+		
+		<!--  Put the following in the LexerStyles Node -->
+        <LexerType name="Apache Conf*" desc="Apache Config File" ext="conf" excluded="no">
+			<WordsStyle name="Default" styleID="0" fgColor="" bgColor="" fontName="" fontStyle="0" />
+			<WordsStyle name="Comment" styleID="1" fgColor="" bgColor="" fontName="" fontStyle="0" />
+			<WordsStyle name="Number" styleID="2" fgColor="" bgColor="" fontName="" fontStyle="0" />
+			<WordsStyle name="Identifier" styleID="3" fgColor="" bgColor="" fontName="" fontStyle="0" />
+			<WordsStyle name="Extension" styleID="4" fgColor="" bgColor="" fontName="" fontStyle="0" />
+            <WordsStyle name="Parameter" keywordClass="1" styleID="5" fgColor="" bgColor="" fontName="" fontStyle="0" />
+			<WordsStyle name="String" styleID="6" fgColor="" bgColor="" fontName="" fontStyle="0" />
+			<WordsStyle name="Operator" styleID="7" fgColor="" bgColor="" fontName="" fontStyle="0" />
+			<WordsStyle name="IP" styleID="8" fgColor="" bgColor="" fontName="" fontStyle="0" />
+            <WordsStyle name="Directive" keywordClass="0" styleID="9" fgColor="" bgColor="" fontName="" fontStyle="0" />
+            <WordsStyle name="User Defined" keywordClass="2" styleID="10" fgColor="" bgColor="" fontName="" fontStyle="0" />
+        </LexerType>
+
+	
+	9.  Now to add a style catcher for our 'User Defined' style to the Colourise_Doc.
+	
+		Below the other	two WordList statements add:
+		
+						WordList &USERDEF = *keywordLists[2];
+		
+		In the sID::IDENTIFIER switch case, below the params.inlist add:
+						
+						} else if(USERDEF.InList(buffer)) {
+						styler.ColourTo(i-1,sID::USERDEF );
+	
+	10.	That's it for the base LexConf file copying, but as mentioned above, we want some folding.
+		And, since we'll be folding we might as well fold both the multiple '#' statements as well
+		as matching '<' '>'.  We do this by copying an existing fold routine, I chose the LexBash
+		fold routine since it is simple, handles basic brace match and multiline comments.
+		After pasting it into the Fold_Doc function simply replacing 'SCE_SH_' with 'sID::' and
+		changing the curly braces to open on '<' and close on '<\' by using:
+			if ( ch == '<' && chNext != '/' ) {
+				levelCurrent++;
+			} else if (ch == '<' && chNext == '/') {
+				levelCurrent--;
+			}
+	
+	11.  That's it!  Time to give it a run for the money.  And it works! :D
+	
+}
+
+====================================================================================================
+III.	Converting a Notepad++ User Defined Language to an external lexer. < A little Harder >
+{
+
+	It is assumed that you already have a language style that you have defined and would like to
+	customize more than already can
+	
+	I'll be referring to NppExtLexer_Template.h and .cpp as well as an example user defined language
+	named MYUSERLANG.
+	
+	
+	1.	Using whatever method you like, copy the NppExtLexer_Template .h and .cpp files in the
+		projects src folder to files named NppExtLexer_MYUSERLANG .h and .cpp and add them to your
+		project.
+		
+	2.  Do a find/replace on '_Template' to '_MYUSERLANG'
+	
+	3.	Open the NppExtLexer_Plugin.cpp file and do a search for '===>'.
+		a.	Lexer Header ===>  #include "NppExtLexer_MYUSERLANG.h"
+		b.	Lexer Namespace ===> namespace l_myuserlang = NppExtLexer_MYUSERLANG;
+		c.	Initialization Statement ===> 
+											lIface::init( "MYUSERLANG*",
+												TEXT("MYUSERLANG File. *Ext"),
+												l_myuserlang::LexOrFold,
+												l_myuserlang::menuDlg );
+		
+		* We don't have any special notification or message handlers.
+	
+	4.  Locate your userDefineLang.xml file and copy the node for MYUSERLANG to the
+		NppExternalLexers.xml file where you can work with it.  Depending on your setup it may be in
+		your personal application data folder for Notepad++ or in the Notepad++ program folder.
+		
+		It will look like this:
+		
+		<UserLang name="MYUSERLANG" ext="uln">
+			<Settings>
+				<Global caseIgnored="yes" />
+				<TreatAsSymbol comment="no" commentLine="no" />
+				<Prefix words1="no" words2="no" words3="no" words4="no" />
+			</Settings>
+			<KeywordLists>
+				<Keywords name="Delimiters">000000</Keywords>
+				<Keywords name="Folder+">{</Keywords>
+				<Keywords name="Folder-">}</Keywords>
+				<Keywords name="Operators"></Keywords>
+				<Keywords name="Comment"> 1 2 0//</Keywords>
+				<Keywords name="Words1">blahs</Keywords>
+				<Keywords name="Words2">blahblahs</Keywords>
+				<Keywords name="Words3">blahblahblahs</Keywords>
+				<Keywords name="Words4">blahblahblahblahs</Keywords>
+			</KeywordLists>
+			<Styles>
+				<WordsStyle name="DEFAULT" styleID="11" fgColor="FFFFFF" bgColor="000000" fontName="" fontStyle="0" />
+				<WordsStyle name="FOLDEROPEN" styleID="12" fgColor="FFFFFF" bgColor="000000" fontName="" fontStyle="0" />
+				<WordsStyle name="FOLDERCLOSE" styleID="13" fgColor="FFFFFF" bgColor="000000" fontName="" fontStyle="0" />
+				<WordsStyle name="KEYWORD1" styleID="5" fgColor="FFFF80" bgColor="FFFFFF" fontName="" fontStyle="0" />
+				<WordsStyle name="KEYWORD2" styleID="6" fgColor="00FFFF" bgColor="FFFFFF" fontName="" fontStyle="0" />
+				<WordsStyle name="KEYWORD3" styleID="7" fgColor="00FF80" bgColor="FFFFFF" fontName="" fontStyle="0" />
+				<WordsStyle name="KEYWORD4" styleID="8" fgColor="0080FF" bgColor="FFFFFF" fontName="" fontStyle="0" />
+				<WordsStyle name="COMMENT" styleID="1" fgColor="000000" bgColor="FFFFFF" fontName="" fontStyle="0" />
+				<WordsStyle name="COMMENT LINE" styleID="2" fgColor="0000FF" bgColor="000000" fontName="" fontStyle="0" />
+				<WordsStyle name="NUMBER" styleID="4" fgColor="FFFFFF" bgColor="000000" fontName="" fontStyle="0" />
+				<WordsStyle name="OPERATOR" styleID="10" fgColor="000000" bgColor="FFFFFF" fontName="" fontStyle="0" />
+				<WordsStyle name="DELIMINER1" styleID="14" fgColor="000000" bgColor="FFFFFF" fontName="" fontStyle="0" />
+				<WordsStyle name="DELIMINER2" styleID="15" fgColor="000000" bgColor="FFFFFF" fontName="" fontStyle="0" />
+				<WordsStyle name="DELIMINER3" styleID="16" fgColor="000000" bgColor="FFFFFF" fontName="" fontStyle="0" />
+			</Styles>
+		</UserLang>
+	
+	5.  Re-arrange and alter your xml nodes to match the entry format Notepad++ expects.  Instead of
+		removing elements, just comment them out until you have things working the way you want.
+		
+		a. Change UserLang node to Language.  Add the commentLine, commentStart, commentEnd elements
+			as shown in the Settings node.
+		b. Comment out the Settings node.
+		c. Create a new Language node to separate the keyword and style sections.  Essentially get
+			it to look like this:
+			
+		*** THIS PART BELONG IN THE LANGUAGES NODE ***
+		
+		<Language name="MYUSERLANG*" ext="uln" commentLine="//" commentStart="" commentEnd="">
+            <!--<Settings>
+                <Global caseIgnored="yes" />
+                <TreatAsSymbol comment="no" commentLine="no" />
+                <Prefix words1="no" words2="no" words3="no" words4="no" />
+            </Settings>-->
+			<Keywords name="Delimiters">000000</Keywords>
+			<Keywords name="Folder+">{</Keywords>
+			<Keywords name="Folder-">}</Keywords>
+			<Keywords name="Operators"></Keywords>
+			<Keywords name="Comment"> 1 2 0//</Keywords>
+			<Keywords name="Words1">blahs</Keywords>
+			<Keywords name="Words2">blahblahs</Keywords>
+			<Keywords name="Words3">blahblahblahs</Keywords>
+			<Keywords name="Words4">blahblahblahblahs</Keywords>
+        </Language>
+        
+		*** THIS PART BELONGS IN THE LEXERSTYLES NODE ***
+        <LexerType name="MYUSERLANG*" desc="MYUSERLANG File" ext="uln" excluded="no">
+			<WordsStyle name="DEFAULT" styleID="11" fgColor="FFFFFF" bgColor="000000" fontName="" fontStyle="0" />
+			<WordsStyle name="FOLDEROPEN" styleID="12" fgColor="FFFFFF" bgColor="000000" fontName="" fontStyle="0" />
+			<WordsStyle name="FOLDERCLOSE" styleID="13" fgColor="FFFFFF" bgColor="000000" fontName="" fontStyle="0" />
+			<WordsStyle name="KEYWORD1" styleID="5" fgColor="FFFF80" bgColor="FFFFFF" fontName="" fontStyle="0" />
+			<WordsStyle name="KEYWORD2" styleID="6" fgColor="00FFFF" bgColor="FFFFFF" fontName="" fontStyle="0" />
+			<WordsStyle name="KEYWORD3" styleID="7" fgColor="00FF80" bgColor="FFFFFF" fontName="" fontStyle="0" />
+			<WordsStyle name="KEYWORD4" styleID="8" fgColor="0080FF" bgColor="FFFFFF" fontName="" fontStyle="0" />
+			<WordsStyle name="COMMENT" styleID="1" fgColor="000000" bgColor="FFFFFF" fontName="" fontStyle="0" />
+			<WordsStyle name="COMMENT LINE" styleID="2" fgColor="0000FF" bgColor="000000" fontName="" fontStyle="0" />
+			<WordsStyle name="NUMBER" styleID="4" fgColor="FFFFFF" bgColor="000000" fontName="" fontStyle="0" />
+			<WordsStyle name="OPERATOR" styleID="10" fgColor="000000" bgColor="FFFFFF" fontName="" fontStyle="0" />
+			<WordsStyle name="DELIMINER1" styleID="14" fgColor="000000" bgColor="FFFFFF" fontName="" fontStyle="0" />
+			<WordsStyle name="DELIMINER2" styleID="15" fgColor="000000" bgColor="FFFFFF" fontName="" fontStyle="0" />
+			<WordsStyle name="DELIMINER3" styleID="16" fgColor="000000" bgColor="FFFFFF" fontName="" fontStyle="0" />
+        </LexerType>
+		
+	6.	Locate and copy the SCE_USER defines in SciLexer.h to NppExtLexer_MYUSERLANG.h Styles
+		namespace, and do some find/replaces to get:
+
+		namespace Styles {
+			const int  DEFAULT = 0;
+			const int  COMMENT = 1;
+			const int  COMMENTLINE = 2;
+			const int  NUMBER = 4;
+			const int  WORD1 = 5;
+			const int  WORD2 = 6;
+			const int  WORD3 = 7;
+			const int  WORD4 = 8;
+			const int  OPERATOR = 10;
+			const int  IDENTIFIER = 11;
+			const int  BLOCK_OPERATOR_OPEN = 12;
+			const int  BLOCK_OPERATOR_CLOSE = 13;
+			const int  DELIMITER1 = 14;
+			const int  DELIMITER2 = 15;
+			const int  DELIMITER3 = 16;
+		} ;  // End namespace Style
+
+	7.	Locate and copy the contents of LexUser.cxx to NppExtLexer_MYUSERLANG.cpp ( paste above the
+		existing Colourise_Doc function ) and then alter ColouriseUserDoc and FoldUserDoc to
+		Colourise_Doc and Fold_Doc respectively, and delete the previously existing Colourise_Doc
+		and Fold_Doc.
+		
+	8.  Locate and comment out the LexerModule lmUserDefine line.
+	
+	9.	Do a find/replace of SCE_USER to sID::
+	
+	10. Now we need to correctly align the keyword wordlist names.  The internal wordlists names
+		need to be changed as well as added to the correct wordstyle.
+		
+		Original		New
+		Delimiters		0
+		Folder+			1
+		Folder-			2
+		Operators		3
+		Comment			4
+		Words1			5
+		Words2			6
+		Words3			7
+		Words4			8
+	
+		Then add a keywordClass element matching the new name above to the correct Wordstyle node.
+		The only one that doesn't match up directly is is Delimiters ( now "0" ) which needs to be
+		at "DELIMINER1" I believe, you may need to test this one, but the testing I did worked.
+		
+	11. Lastly, if any of your user defined styles are 'prefix' styles, you'll want to alter the
+		code in the Colour_Doc line:
+			from:	styler.GetPropertyInt("userDefine.g1Prefix", 0) != 0;
+			to:		styler.GetPropertyInt("userDefine.g1Prefix", 1) != 0;
+	
+	12. That should be it, so build it and startup Notepad++.  Select MYUSERLANG* from the language
+		menu and enjoy!  Granted this is a basic example that didn't consider case sensitivity and
+		such things, but the concept is the same.
+
+}
+
+====================================================================================================
+IV.		Creating a new custom language lexer. < Even harder >
+{
+	Sorry. ;)  You won't be finding a how to on creating a custom lexer from scratch in this
+	document.  As you can imagine, creating a lexer for your own language can either be	very simple
+	or very complex.  The NppExtLexer_PowerShell lexer is quite complex and should serve as a good
+	example on making a lexer that can handle style nesting, highlighting, and multiple	folding
+	styles all in the same lexer.
+	
+	I tried to comment the code quite a bit and make it 'readable', hopefully that will get you on
+	your way.
+	
+	Also, creating your own custom lexer isn't the top of the food chain so don't stop here.  If you
+	are dedicated to creating a tool that is used by other developers you'll want to look at making
+	function lists, working out auto-completion and so on.  Perhaps even, eventually, write your
+	own container.
+}
+
+====================================================================================================
+V.		Problems and issues with using external lexers.
+{
+	1.	When using multiple external lexers you may find that the language isn't automatically
+		selected based on the user extension.
+		
+	2.	Watch for one-off errors,  especially when working with nested states one single lines using
+		groupStart and groupEnd sets.
+	
+	3.	Depending on how you structure the colouring and folding routines to work with Notepad++ you
+		may find that your lexer isn't portable to other Scintilla based applications.
+}

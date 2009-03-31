@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="Windows-1252" ?>
+<NotepadPlus>
+    <Languages>
+        <!-- name must be the same as the one in the language menu. -->
+        <!-- ext here is the default one. -->
+        <!-- Comments are the comment that is used from the context menu when you tell np++ to comment a line. -->
+        <Language name="PowerShell*" ext="ps1 psm1 psd1" commentLine="# " commentStart="&lt;#" commentEnd="#&gt;">
+            <!-- name must be the corresponding WordsStyle keywordClass below. -->
+            <!-- 	WordList &keywords			= *keywordlists[0];  -->
+            <Keywords name="instre1">begin break continue do default else elseif end filter for foreach function if in param process return switch until where while</Keywords>
+            <!-- 	WordList &cmdlets			   = *keywordlists[1];  -->
+            <Keywords name="instre2">^add- ^clear- ^compare- ^complete- ^convertfrom- ^convert- ^convertto- ^copy- ^disable- ^disconnect- ^enable- ^expand- ^export- ^foreach- ^format- ^get- ^group- ^import- ^invoke- ^join- ^measure- ^move- ^new- ^out- ^ping- ^pop- ^push- ^read- ^receive- ^register- ^remove- ^rename- ^resize- ^resolve- ^restart- ^resume- ^select- ^send- ^set- ^sort- ^split- ^start- ^stop- ^suspend- ^tee- ^test- ^trace- ^undo- ^unregister- ^update- ^use- ^wait- ^where- ^write-</Keywords>
+            <!-- 	WordList &aliases			   = *keywordlists[2];  -->
+            <Keywords name="type1">ac asnp clc cli clp clv cpi cpp cvpa dbp diff ebp epal epcsv fc fl foreach % ft fw gal gbp gc gci gcm gdr gcs ghy gi gl gm gp gps group gsv gsnp gu gv gwmi iex ihy ii iwmi ipal ipcsv mi mp nal ndr ni nv oh ogv grid rbp rdr ri rni rnp rp rsnp rv rwmi rvpa sal sasv sbp sc select si sl swmi sleep sort sp spps spsv sti sto stu sv tee where ? write cat exec clear cp h history kill lp ls mount mv popd ps pushd pwd r rm rmdir echo cls chdir copy del dir erase move rd ren set type icm measure new ss gpv ra nho ?: ?? apv gvs gvpscx galpscx gcmpscx gdrpscx e up rehash ep ehp egp eghp pager ql qs hrexc winexc cvfb64 cvtb64 cvxml fhex fxml gcb gfvi rnd gsp ln mail ocb ping sxml touch saps adl asp apropos ephy ipasm iphy lorem ghm gtn reduce rver srts sro swr vmadmin man help bp skbp edit rand RandomLine Get-Quote gqt gas sas sign say gph</Keywords>
+            <!-- 	WordList &operators			= *keywordlists[3];  -->
+            <Keywords name="type2">and band bor bxor contains eq ge gt join le like lt match ne not notcontains notlike notmatch or replace split xor</Keywords>
+            <!-- 	WordList &cmdletParam		= *keywordlists[4];  -->
+            <Keywords name="type3">alias cmdletbinding parameter validatecount validatelength validatenotnull validatenotnullorempty validatepattern validaterange validatescript validateset</Keywords>
+            <!-- 	WordList &parameterValues	= *keywordlists[5];  -->
+            <Keywords name="type4">allowempty allownull confirmimpact defaultparametersetname helpmessage mandatory parametersetname position supportsshouldprocess valuefrompipeline valuefrompipelinebypropertyname valuefromremainingarguments</Keywords>
+        </Language>
+        <Language name="Conf*" ext="conf" commentLine="#">
+            <Keywords name="0">acceptmutex acceptpathinfo accessconfig accessfilename action addalt addaltbyencoding addaltbytype addcharset adddefaultcharset adddescription addencoding addhandler addicon addiconbyencoding addiconbytype addinputfilter addlanguage addmodule addmoduleinfo addoutputfilter addoutputfilterbytype addtype agentlog alias aliasmatch all allow allowconnect allowencodedslashes allowoverride anonymous anonymous_authoritative anonymous_logemail anonymous_mustgiveemail anonymous_nouserid anonymous_verifyemail assignuserid authauthoritative authdbauthoritative authdbgroupfile authdbmauthoritative authdbmgroupfile authdbmtype authdbmuserfile authdbuserfile authdigestalgorithm authdigestdomain authdigestfile authdigestgroupfile authdigestnccheck authdigestnonceformat authdigestnoncelifetime authdigestqop authdigestshmemsize authgroupfile authldapauthoritative authldapbinddn authldapbindpassword authldapcharsetconfig authldapcomparednonserver authldapdereferencealiases authldapenabled authldapfrontpagehack authldapgroupattribute authldapgroupattributeisdn authldapremoteuserisdn authldapurl authname authtype authuserfile bindaddress browsermatch browsermatchnocase bs2000account bufferedlogs cachedefaultexpire cachedirlength cachedirlevels cachedisable cacheenable cacheexpirycheck cachefile cacheforcecompletion cachegcclean cachegcdaily cachegcinterval cachegcmemusage cachegcunused cacheignorecachecontrol cacheignoreheaders cacheignorenolastmod cachelastmodifiedfactor cachemaxexpire cachemaxfilesize cacheminfilesize cachenegotiateddocs cacheroot cachesize cachetimemargin cgimapextension charsetdefault charsetoptions charsetsourceenc checkspelling childperuserid clearmodulelist contentdigest cookiedomain cookieexpires cookielog cookiename cookiestyle cookietracking coredumpdirectory customlog dav davdepthinfinity davlockdb davmintimeout defaulticon defaultlanguage defaulttype define deflatebuffersize deflatecompressionlevel deflatefilternote deflatememlevel deflatewindowsize deny directory directoryindex directorymatch directoryslash documentroot dumpioinput dumpiooutput enableexceptionhook enablemmap enablesendfile errordocument errorlog example expiresactive expiresbytype expiresdefault extendedstatus extfilterdefine extfilteroptions fancyindexing fileetag files filesmatch forcelanguagepriority forcetype forensiclog from group header headername hostnamelookups identitycheck ifdefine ifmodule imapbase imapdefault imapmenu include indexignore indexoptions indexorderdefault isapiappendlogtoerrors isapiappendlogtoquery isapicachefile isapifakeasync isapilognotsupported isapireadaheadbuffer keepalive keepalivetimeout languagepriority ldapcacheentries ldapcachettl ldapconnectiontimeout ldapopcacheentries ldapopcachettl ldapsharedcachefile ldapsharedcachesize ldaptrustedca ldaptrustedcatype limit limitexcept limitinternalrecursion limitrequestbody limitrequestfields limitrequestfieldsize limitrequestline limitxmlrequestbody listen listenbacklog loadfile loadmodule location locationmatch lockfile logformat loglevel maxclients maxkeepaliverequests maxmemfree maxrequestsperchild maxrequestsperthread maxspareservers maxsparethreads maxthreads maxthreadsperchild mcachemaxobjectcount mcachemaxobjectsize mcachemaxstreamingbuffer mcacheminobjectsize mcacheremovalalgorithm mcachesize metadir metafiles metasuffix mimemagicfile minspareservers minsparethreads mmapfile modmimeusepathinfo multiviewsmatch namevirtualhost nocache noproxy numservers nwssltrustedcerts nwsslupgradeable options order passenv pidfile port protocolecho proxy proxybadheader proxyblock proxydomain proxyerroroverride proxyiobuffersize proxymatch proxymaxforwards proxypass proxypassreverse proxypreservehost proxyreceivebuffersize proxyremote proxyremotematch proxyrequests proxytimeout proxyvia qsc readmename redirect redirectmatch redirectpermanent redirecttemp refererignore refererlog removecharset removeencoding removehandler removeinputfilter removelanguage removeoutputfilter removetype requestheader require resourceconfig rewritebase rewritecond rewriteengine rewritelock rewritelog rewriteloglevel rewritemap rewriteoptions rewriterule rlimitcpu rlimitmem rlimitnproc satisfy scoreboardfile script scriptalias scriptaliasmatch scriptinterpretersource scriptlog scriptlogbuffer scriptloglength scriptsock securelisten sendbuffersize serveradmin serveralias serverlimit servername serverpath serverroot serversignature servertokens servertype setenv setenvif setenvifnocase sethandler setinputfilter setoutputfilter singlelisten ssiendtag ssierrormsg ssistarttag ssitimeformat ssiundefinedecho sslcacertificatefile sslcacertificatepath sslcarevocationfile sslcarevocationpath sslcertificatechainfile sslcertificatefile sslcertificatekeyfile sslciphersuite sslengine sslmutex ssloptions sslpassphrasedialog sslprotocol sslproxycacertificatefile sslproxycacertificatepath sslproxycarevocationfile sslproxycarevocationpath sslproxyciphersuite sslproxyengine sslproxymachinecertificatefile sslproxymachinecertificatepath sslproxyprotocol sslproxyverify sslproxyverifydepth sslrandomseed sslrequire sslrequiressl sslsessioncache sslsessioncachetimeout sslusername sslverifyclient sslverifydepth startservers startthreads suexecusergroup threadlimit threadsperchild threadstacksize timeout transferlog typesconfig unsetenv usecanonicalname user userdir virtualdocumentroot virtualdocumentrootip virtualhost virtualscriptalias virtualscriptaliasip win32disableacceptex xbithack</Keywords>
+            <Keywords name="1">on off standalone inetd force-response-1.0 downgrade-1.0 nokeepalive indexes includes followsymlinks none x-compress x-gzip</Keywords>
+            <Keywords name="2" />
+        </Language>
+        <Language name="MYUSERLANG*" ext="uln" commentLine="//" commentStart="" commentEnd="">
+            <!--<Settings>
+                <Global caseIgnored="yes" />
+                <TreatAsSymbol comment="no" commentLine="no" />
+                <Prefix words1="no" words2="no" words3="no" words4="no" />
+            </Settings>-->
+            <Keywords name="0">000000</Keywords>
+            <Keywords name="1">{</Keywords>
+            <Keywords name="2">}</Keywords>
+            <Keywords name="3" />
+            <Keywords name="4">1 2 0//</Keywords>
+            <Keywords name="5">blahs</Keywords>
+            <Keywords name="6">blahblahs</Keywords>
+            <Keywords name="7">blahblahblahs</Keywords>
+            <Keywords name="8">blahblahblahblahs</Keywords>
+        </Language>
+    </Languages>
+    <LexerStyles>
+        <!-- name must be the same as the Language name above. -->
+        <!-- desc is what shows up in the styler configuator. -->
+        <!-- ext is the "user defined" one. -->
+        <!-- excluded is whether is shows up in the language menu. (Can be changed in the settings by the user the normal way.) -->
+        <LexerType name="PowerShell*" desc="PowerShell Script" ext="ps1" excluded="no">
+            <!-- name is what shows up in the styler config for that style. -->
+            <!-- styleID can be 0 through 31. -->
+            <!-- keywordClass can be a number between 0 and 8 or the words that are normally used. -->
+            <!-- ****************************************************************************************************************************** -->
+            <!-- Base style for unquoted/non-captured text-->
+            <WordsStyle name="Default" styleID="0" fgColor="000000" bgColor="FFFFFF" fontName="" fontStyle="1" fontSize="" />
+            <!-- Non-Keyword styles (or styles applied specifically by ruleset matching) -->
+            <WordsStyle name="Operator" keywordClass="type2" styleID="1" fgColor="400000" bgColor="FFFFFF" fontName="Consolas" fontStyle="1" fontSize="" />
+            <WordsStyle name="Escape" styleID="2" fgColor="54B04F" bgColor="FFFFFF" fontName="" fontStyle="2" fontSize="" />
+            <WordsStyle name="Number" styleID="3" fgColor="800040" bgColor="FFFFFF" fontName="Consolas" fontStyle="1" fontSize="" />
+            <WordsStyle name="Comment" styleID="4" fgColor="008000" bgColor="FFFFFF" fontName="Consolas" fontStyle="1" fontSize="" />
+            <WordsStyle name="Multi-Line Comment" styleID="5" fgColor="004000" bgColor="FFFFFF" fontName="Courier New" fontStyle="0" fontSize="" />
+            <WordsStyle name="String" styleID="6" fgColor="AA0000" bgColor="FFFFFF" fontName="Courier New" fontStyle="0" fontSize="" />
+            <WordsStyle name="String Literal" styleID="7" fgColor="800000" bgColor="FFFFFF" fontName="Consolas" fontStyle="2" fontSize="" />
+            <WordsStyle name="HereString" styleID="8" fgColor="800000" bgColor="FFFFFF" fontName="Courier New" fontStyle="0" fontSize="" />
+            <WordsStyle name="HereString Literal" styleID="9" fgColor="800000" bgColor="FFFFFF" fontName="Consolas" fontStyle="2" fontSize="" />
+            <WordsStyle name="Variable" styleID="10" fgColor="FF4D00" bgColor="FFFFFF" fontName="Consolas" fontStyle="1" fontSize="" />
+            <WordsStyle name="Member Property" styleID="11" fgColor="800040" bgColor="FFFFFF" fontName="Consolas" fontStyle="0" fontSize="" />
+            <WordsStyle name="Member Method" styleID="12" fgColor="800080" bgColor="FFFFFF" fontName="" fontStyle="0" fontSize="" />
+            <!-- Non-specfic Keyword  styles (or Keywords that didn't find a specific match in a KeywordClasss list) -->
+            <WordsStyle name="Identifier" styleID="13" fgColor="000000" bgColor="FF8080" fontName="" fontStyle="5" fontSize="" />
+            <WordsStyle name="Type" styleID="14" fgColor="0000A0" bgColor="FFFFFF" fontName="" fontStyle="1" fontSize="" />
+            <!-- Specific Keyword styles -(or Keywords that did match within a KeywordClass list -->
+            <WordsStyle name="Keyword" keywordClass="instre1" styleID="15" fgColor="000080" bgColor="FFFFFF" fontName="" fontStyle="1" fontSize="" />
+            <WordsStyle name="Alias" keywordClass="type1" styleID="16" fgColor="8000FF" bgColor="FFFFFF" fontName="" fontStyle="3" fontSize="" />
+            <WordsStyle name="Cmdlet" keywordClass="instre2" styleID="17" fgColor="D900D9" bgColor="FFFFFF" fontName="" fontStyle="1" fontSize="" />
+            <WordsStyle name="Parameter" styleID="18" fgColor="0080FF" bgColor="FFFFFF" fontName="" fontStyle="1" fontSize="" />
+            <WordsStyle name="ParameterAttribute" keywordClass="type4" styleID="19" fgColor="400080" bgColor="FFFFFF" fontName="" fontStyle="0" fontSize="" />
+            <WordsStyle name="CmdletParameter" keywordClass="type3" styleID="20" fgColor="0080FF" bgColor="FFFFFF" fontName="" fontStyle="1" fontSize="">test</WordsStyle>
+            <!-- Indicators -->
+            <WordsStyle name="Expression Indicator" styleID="21" bgColor="6464FF" fontStyle="1" />
+            <WordsStyle name="Parameter Indicator" styleID="22" bgColor="80FFFF" fontStyle="5" />
+            <WordsStyle name="Property Indicator" styleID="23" bgColor="FF80FF" fontStyle="5" />
+            <WordsStyle name="Method Indicator" styleID="24" bgColor="2DFF2D" fontStyle="7" />
+        </LexerType>
+        <LexerType name="Conf*" desc="Apache Config File" ext="conf" excluded="no">
+            <WordsStyle name="Default" styleID="0" fgColor="FFFFFF" bgColor="000000" fontName="" fontStyle="0" />
+            <WordsStyle name="Comment" styleID="1" fgColor="0000FF" bgColor="000000" fontName="" fontStyle="0" />
+            <WordsStyle name="Number" styleID="2" fgColor="FF0000" bgColor="000000" fontName="" fontStyle="0" />
+            <WordsStyle name="Identifier" styleID="3" fgColor="C0C0C0" bgColor="000000" fontName="" fontStyle="0" />
+            <WordsStyle name="Extension" styleID="4" fgColor="00FFFF" bgColor="000000" fontName="" fontStyle="0" />
+            <WordsStyle name="Parameter" keywordClass="1" styleID="5" fgColor="00FFFF" bgColor="000000" fontName="" fontStyle="0" />
+            <WordsStyle name="String" styleID="6" fgColor="FF80FF" bgColor="000000" fontName="" fontStyle="0" />
+            <WordsStyle name="Operator" styleID="7" fgColor="FF8040" bgColor="000000" fontName="" fontStyle="0" />
+            <WordsStyle name="IP" styleID="8" fgColor="FF0000" bgColor="000000" fontName="" fontStyle="0" />
+            <WordsStyle name="Directive" keywordClass="0" styleID="9" fgColor="00FF80" bgColor="000000" fontName="" fontStyle="0" />
+            <WordsStyle name="User Defined" keywordClass="2" styleID="10" fgColor="FF80FF" bgColor="000000" fontName="" fontStyle="0">blahblah</WordsStyle>
+        </LexerType>
+        <LexerType name="MYUSERLANG*" desc="MYUSERLANG File" ext="uln" excluded="no">
+            <WordsStyle name="DEFAULT" styleID="11" fgColor="FFFFFF" bgColor="000000" fontName="" fontStyle="0" />
+            <WordsStyle name="FOLDEROPEN" keywordClass="1" styleID="12" fgColor="00FF00" bgColor="000000" fontName="" fontStyle="0" />
+            <WordsStyle name="FOLDERCLOSE" keywordClass="2" styleID="13" fgColor="00FF00" bgColor="000000" fontName="" fontStyle="0" />
+            <WordsStyle name="KEYWORD1" keywordClass="5" styleID="5" fgColor="FFFF80" bgColor="000000" fontName="" fontStyle="0" />
+            <WordsStyle name="KEYWORD2" keywordClass="6" styleID="6" fgColor="00FFFF" bgColor="000000" fontName="" fontStyle="0" />
+            <WordsStyle name="KEYWORD3" keywordClass="7" styleID="7" fgColor="00FF80" bgColor="000000" fontName="" fontStyle="0" />
+            <WordsStyle name="KEYWORD4" keywordClass="8" styleID="8" fgColor="0080FF" bgColor="000000" fontName="" fontStyle="0" />
+            <WordsStyle name="COMMENT" keywordClass="4" styleID="1" fgColor="80FFFF" bgColor="000000" fontName="" fontStyle="0" />
+            <WordsStyle name="COMMENT LINE" styleID="2" fgColor="0000FF" bgColor="000000" fontName="" fontStyle="0" />
+            <WordsStyle name="NUMBER" styleID="4" fgColor="FFFFFF" bgColor="000000" fontName="" fontStyle="0" />
+            <WordsStyle name="OPERATOR" styleID="10" keywordClass="3" fgColor="FF00FF" bgColor="000000" fontName="" fontStyle="0" />
+            <WordsStyle name="DELIMINER1" keywordClass="0" styleID="14" fgColor="FFFF80" bgColor="000000" fontName="" fontStyle="0" />
+            <WordsStyle name="DELIMINER2" styleID="15" fgColor="FF0000" bgColor="000000" fontName="" fontStyle="0" />
+            <WordsStyle name="DELIMINER3" styleID="16" fgColor="FF8040" bgColor="000000" fontName="" fontStyle="0" />
+        </LexerType>
+    </LexerStyles>
+</NotepadPlus>
