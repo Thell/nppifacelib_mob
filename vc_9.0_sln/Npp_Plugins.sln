@@ -18,6 +18,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NppPlugin_Template", "..\Np
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NppPlugin_PluginMargin", "..\NppPlugins\NppPlugin_PluginMargin\visual.net\NppPlugin_PluginMargin.vcproj", "{865506C5-8E7E-4B9F-B0A4-CDAA24DA64BF}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NppPlugin_ExtLexer", "..\NppPlugins\NppPlugin_ExtLexer\visual.net\NppPlugin_ExtLexer.vcproj", "{C9377A4E-D005-4E29-BF91-7DBDBF1CB9BB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug Unicode|Win32 = Debug Unicode|Win32
@@ -82,6 +84,14 @@ Global
 		{865506C5-8E7E-4B9F-B0A4-CDAA24DA64BF}.Release Unicode|Win32.Build.0 = Release_Unicode|Win32
 		{865506C5-8E7E-4B9F-B0A4-CDAA24DA64BF}.Release|Win32.ActiveCfg = Release|Win32
 		{865506C5-8E7E-4B9F-B0A4-CDAA24DA64BF}.Release|Win32.Build.0 = Release|Win32
+		{C9377A4E-D005-4E29-BF91-7DBDBF1CB9BB}.Debug Unicode|Win32.ActiveCfg = Debug_Unicode|Win32
+		{C9377A4E-D005-4E29-BF91-7DBDBF1CB9BB}.Debug Unicode|Win32.Build.0 = Debug_Unicode|Win32
+		{C9377A4E-D005-4E29-BF91-7DBDBF1CB9BB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{C9377A4E-D005-4E29-BF91-7DBDBF1CB9BB}.Debug|Win32.Build.0 = Debug|Win32
+		{C9377A4E-D005-4E29-BF91-7DBDBF1CB9BB}.Release Unicode|Win32.ActiveCfg = Release_Unicode|Win32
+		{C9377A4E-D005-4E29-BF91-7DBDBF1CB9BB}.Release Unicode|Win32.Build.0 = Release_Unicode|Win32
+		{C9377A4E-D005-4E29-BF91-7DBDBF1CB9BB}.Release|Win32.ActiveCfg = Release|Win32
+		{C9377A4E-D005-4E29-BF91-7DBDBF1CB9BB}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
