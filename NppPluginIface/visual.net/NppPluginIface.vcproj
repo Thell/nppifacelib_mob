@@ -352,6 +352,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\src\NppPluginIface_ExtLexer_SciCommon.h"
+				>
+			</File>
+			<File
 				RelativePath="..\src\NppPluginIface_Markers.h"
 				>
 			</File>
