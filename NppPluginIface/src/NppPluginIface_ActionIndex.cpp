@@ -33,10 +33,9 @@
  *
  * When tracking action counts for a Document the notifications received from the extra
  * references must be discarded or the count is thrown out of synch with Scintilla's internal
- * action counter.  Unfortunately, Scintilla has both the current action count and ref count
- * private with no get function for either, so it must be tracked from the container side.
+ * action counter.
  *
- * This source attempts to filter out the extra messages by comparing where the notification
+ * This source filters out the extra messages by comparing where the notification
  * originated and determing if the notification should be handled by a particular view.
  *
  */
@@ -57,7 +56,7 @@ namespace npp_plugin {
 namespace actionindex {
 
 //  Un-named namespace for private classes, variables, and functions.
-//namespace {
+namespace {
 
 	//  A few namespace scope globals for convience.
 	const bool PROCESS = false;
@@ -100,15 +99,15 @@ namespace actionindex {
 		return ( retVal );
 	}
 
-//};	//  End un-named namespace
+};	//  End un-named namespace
 
 
 //  Returns a target index for tracking actions, the index increments and decrements in relation
 //  with the messages reported via SCNotifications.
 //  Be sure to use the returned prevActionIndex value when dealing with UNDO messages.  You are
 //  travelling backwards after all.
-//  'SC_MOD_BEFORE...' the messages process as a 'Dry Run', the action count is returned
-//  but not stored, and the actual message will still be processed as normal.
+//  'SC_MOD_BEFORE...' messages process as a 'Dry Run', the action count is returned
+//  but not stored, and the following SC_MOD_ message will still be processed as normal.
 //  The tuple returned is ( int pDoc, int prevActionIndex, int currActionCount, bool excluded, bool dryrun )
 //  If returned pDoc field is NULL the notification was not processed.
 boost::tuples::tuple< int, int, int, bool, bool> processSCNotification( SCNotification* scn )
@@ -168,19 +167,6 @@ boost::tuples::tuple< int, int, int, bool, bool> processSCNotification( SCNotifi
 			dryrun = true;
 		}
 	}
-
-/*
-	//  REDO actions.
-	else if ( modFlags & ( SC_PERFORMED_REDO ) ) {
-		if ( modFlags & ( SC_MOD_INSERTTEXT | SC_MOD_DELETETEXT ) ) {
-			newIndex++;
-		}
-		else if ( modFlags & ( SC_MOD_BEFOREINSERT | SC_MOD_BEFOREDELETE ) ) {
-			newIndex++;
-			dryrun = true;
-		}
-	}
-*/
 
 	//  Store the new action count if this isn't a dry-run.
 	if (! dryrun ) _ActionIndex[pDoc] = newIndex;

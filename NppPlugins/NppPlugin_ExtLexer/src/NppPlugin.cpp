@@ -367,7 +367,7 @@ void npp_plugin::Help_func()
 	
 	tstring pluginHelpFile;
 	pluginHelpFile.append(directoryPath);
-	pluginHelpFile.append( TEXT("\\Plugins\\Config\\Doc\\NppExtLexer_PluginHelp.txt") );
+	pluginHelpFile.append( TEXT("\\Plugins\\doc\\NppPlugin_ExtLexerHelp.txt") );
 
 	bool docOpened = ( 1 == SendMessage( npp_plugin::hNpp(), NPPM_DOOPEN, 0, (LPARAM)pluginHelpFile.c_str() ) );
 

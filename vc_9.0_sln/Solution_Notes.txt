@@ -1,4 +1,6 @@
-Solution Notes and Usage
+Solution Notes:
+
+- For setup and usage information see the writeup on notepadplus.almostautomated.com.
 
 - Interesting to note that the C++ properties page for Additional Include directories won't
 correctly expand macros that are inside of quotes.
@@ -13,32 +15,12 @@ a space in a dir name needs to be embedded in quotes.
 need to be rebuilt after the initial build, but when they are there is no need to see all those
 messages.  This is for working on plugins, not Scintilla or Notepad++; if they are going to be
 worked on, either create a new solution or increase the warning levels to stay out of trouble.
-  
-- After opening the solution, build notepadPlus.vc.7 and then copy SciLexer.dll from the
-Scintilla bin directory to the PowerEditor bin directory.
-
-- Build the plugin iface lib ( test with the template project )
-
-- For new plugins:
- * Add a new project to the solution.
- * In the 'Property Manager' add the PluginDebugBuild.vsprops to the new plugin's debug config
-   and the release propsheet to the release one.
- * In the solutions configuration manager create a new Release_Unicode and Debug_Unicode build
-   config, copying from the plugins defaults release and debug configs.
- * In the project's properties configuration select 'all configurations', then in the C++ code
-   generation runtime library setting select inherit values.
- * Using the 'multiple configurations', select the two unicode build configs and then
-   ensure the General configuration property for character is set to use unicode.  Do the same
-   for the multi-byte character builds.
- Should be ready to start coding now.
  
 - Remember that there aren't dependencies setup between the projects...
 
-
-
 =================
 
-Misc notes about some fo the extensions:
+Misc notes about some of the extensions:
 
 _Markers:
 - It would be nice to add a markergetback and markergetfor so plugins could watch for style

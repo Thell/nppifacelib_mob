@@ -21,44 +21,6 @@
 #include <vector>
 #include <set>
 
-#ifdef _DEBUG
-	//  <--- headers for testing actioncounter --->
-	#include "Platform.h"
-	#include "UniConversion.h"
-	#include "Indicator.h"
-	#include "XPM.h"
-	#include "LineMarker.h"
-	#include "Style.h"
-	#include "ViewStyle.h"
-	#include "SplitVector.h"
-	#include "Partitioning.h"
-	#include "RunStyles.h"
-	#include "Decoration.h"
-	#include "CharClassify.h"
-	#include "CellBuffer.h"
-	#include "Document.h"
-#endif
-
-#if(0)
-	//  Additional includes for testing editor.
-	#include "PositionCache.h"
-	#include "KeyMap.h"
-	#include "ContractionState.h"
-
-	//  Easier to just add this here than include other files.
-	struct RangeToFormat {
-		HDC hdc;
-		HDC hdcTarget;
-		RECT rc;
-		RECT rcPage;
-		CharacterRange chrg;
-	};
-
-	#include "Editor.h"
-#endif
-
-//  ^^^^  End headers for testing action counter.
-
 namespace npp_plugin_changemarker {
 
 using namespace npp_plugin;
@@ -370,8 +332,8 @@ void ChangedDocument::processDelete( int startLine, int endLine )
 		currLine++;
 	} while ( currLine < endLine );
 
-	//  In Scintilla, when lines are deleted, if there is are markers on the line after the
-	//  deleted lines they won't get moved when an undo re-inserts those lines.
+	//  In Scintilla, when lines are deleted, if there is a marker on the line after the
+	//  deleted lines it won't get moved when an undo re-inserts those lines.
 	//  This attempts to fix that.
 	prevMark_State = ::SendMessage( hView, SCI_MARKERGET, currLine, 0 );
 	if ( prevMark_State ) {
@@ -856,7 +818,7 @@ void wordStylesUpdatedHandler()
 		newCM->markName = ( i == CM_SAVED ) ? ( TEXT("CM_SAVED") ) : ( TEXT("CM_NOTSAVED") );
 		newCM->styleName = ( i == CM_SAVED ) ? ( TEXT("Changes: Saved") ) : ( TEXT("Changes: Not Saved") );
 
-		//  Style Settings.  From WodsStyle node ( outside of GuiConfig element )
+		//  Style Settings.  From WordsStyle node ( outside of GuiConfig element )
 		TiXmlHandle hXmlDoc( xml::get_pXmlPluginConfigDoc() );
 		TiXmlElement* style_Node = hXmlDoc.FirstChild( 
 			TEXT("NotepadPlus")).FirstChild( TEXT("LexerStyles")).FirstChild(
@@ -885,17 +847,6 @@ void wordStylesUpdatedHandler()
 //  Document modification handler to identify and track line changes.
 void modificationHandler ( SCNotification* scn )
 {
-
-//#define MSG_DEBUGGING
-#ifdef MSG_DEBUGGING
-	int dbgmsg = scn->nmhdr.code;
-	int dbgflags = scn->modificationType;
-	TCHAR dbgflagHEX[65];
-	::_itot(dbgflags, dbgflagHEX, 16);
-	TCHAR dbgflag2[65];
-	::_itot(dbgflags, dbgflag2, 2);
-#endif
-
 	//  Static state variables
 	static bool prevWasBeforeDelete = false;		//  Used for multiline delete tracking.
 
@@ -999,14 +950,6 @@ void modificationHandler ( SCNotification* scn )
 		::SendMessage( hView, SCI_MARKERDELETEALL, cm[CM_NOTSAVED]->id, 0 );
 		if ( currIndex == 0 ) ::SendMessage( hView, SCI_MARKERDELETEALL, cm[CM_SAVED]->id, 0 );
 	}
-
-
-#ifdef MSG_DEBUGGING
-	// Doc:: {pDoc}  flags:{dbgflagHEX} prevIndex:: {prevIndex} currIndex:: {currIndex}  sciIndex:: {(((*dbg_pDoc).cb).uh).currentAction}  hView:: {hView}
-	Document* dbg_pDoc = reinterpret_cast<Document *>(pDoc);
-	bool dbg_pDoc_watch = false;
-#endif
-
 }
 
 //  Alters the state of current Changes: Not Saved markers to Changes: Saved.
@@ -1045,7 +988,6 @@ void jumpLineDown() { jumpChangedLines( true ); }
 //  Global display margin control
 void displayWithLineNumbers()
 {
-	//  Change the target
 	cm[CM_SAVED]->setTargetMarginMenuItem( MARGIN_LINENUMBER );
 	cm[CM_NOTSAVED]->setTargetMarginMenuItem( MARGIN_LINENUMBER );
 }
@@ -1053,25 +995,22 @@ void displayWithLineNumbers()
 //  Global display margin control
 void displayWithBookMarks()
 {
-	//  Change the target
 	cm[CM_SAVED]->setTargetMarginMenuItem( MARGIN_BOOKMARK );
 	cm[CM_NOTSAVED]->setTargetMarginMenuItem( MARGIN_BOOKMARK );
 }
 
-//  Global display margin control ( plugin margin )
+//  Global display margin control
 void displayInPluginMargin()
 {
-	//  Change the target
 	cm[CM_SAVED]->setTargetMarginMenuItem( MARGIN_PLUGIN );
 	cm[CM_NOTSAVED]->setTargetMarginMenuItem( MARGIN_PLUGIN );
 }
 
-//  Global display margin control ( no margin )
+//  Global display margin control
 //  Removes the change marker from each margin marker mask, forcing the markers to
-//  be displayed as line highlights.
+//  be displayed as line highlights using the highlighter style information.
 void displayAsHighlight()
 {
-	//  Change the target
 	cm[CM_SAVED]->setTargetMarginMenuItem( MARGIN_NONE );
 	cm[CM_NOTSAVED]->setTargetMarginMenuItem( MARGIN_NONE );
 }
@@ -1195,6 +1134,5 @@ void disablePlugin()
 		}
 	}
 }
-
 
 }  //End namespace:: npp_plugin_changemarker

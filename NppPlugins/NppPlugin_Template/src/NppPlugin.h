@@ -17,13 +17,27 @@
 
  /*
   *  These includes provide plugins with functions that enhance the N++ plugin interface.
-  *  The basic interface enhancement provides plugin registration and handle controls.
+  *
+  *  The basic interface enhancement provides plugin registration and handle controls, with 
+  *  multiple common ways to access view handles.
+  *
   *  The ExtLexer extension provides styler registration and forces N++ to read a styles
   *  xml, which makes it easy to add 'Global Styles'.
-  *  Both of those also allow for function registration.  The basic difference between the
+  *
+  *  - Both of those also allow for function registration.  The basic difference between the
   *  two function registrations is the base functions display under a separator in the order
   *  registered, and the ExtLexer registered functions get sorted and display above the
   *  separator.
+  *
+  *  The CmdMap extension allows plugins to use an internal enum value for a cmdId when working
+  *  with registered N++ funcItems.  This allows the plugin writer to register the commands
+  *  with N++ in one order yet use the command values from an enum in an order more useful to
+  *  the code, as well as not needing to deal with the funcItem array, and instead can use a
+  *  call ( getCmdId( CMD_HIGHLIGHT ) ) to get the assigned N++ menu command id.
+  *
+  *  The DocTabMap provides plugins some common helper functions that allows plugins to get
+  *  the Scintilla document id from a N++ bufferId, determine if a file is open and ready, and
+  *  get the Scintilla document id for the actively focused document in either N++ view.
   *
   *  The XmlConfig extension makes it easy for a plugin to read/write configuration data in
   *  the same way that N++ does.  So, if the plugin provides styling, the plugins' styles
@@ -34,6 +48,18 @@
   *  a marker the defineMarker function will check for a valid and free marker number to use,
   *  as well as set the mask information for the margins in both views.
   *
+  *  The ActionIndex extension provides an action counter for a given document synchronized
+  *  with the users actions for inserte/delete/undo/redo actions.
+  *
+  *  The ActionHistory extension provides a history container for a plugin to store actions
+  *  that it wants to have tied to the users insert/delete/undo/redo actions.  It uses the 
+  *  ActionIndex count for the 'major' index and allows multiple action item entries per index
+  *  ( or 'minor index' ).  An example of this is the NppPlugin_ChangeMarker plugin that shows
+  *  lines that have changed since a document was opened and if those changes are saved or not.
+  *
+  *  Lastly, the msgs extension provides a common place to store inter plugin msg definitions.
+
+
   *  TODO:  Two other extensions that would be very nice to have available are dialog related.
   *    1)  A Preferences dialog hook into the Edit Components panel.
   *    2)  A Styler Configurator hook to allow widget registration similar to the 'Global
@@ -47,10 +73,13 @@
 //  <--- Notepad++ Plugin Interface Library Includes --->
 #include "NppPluginIface.h"
 #include "NppPluginIface_msgs.h"
-#include "NppPluginIface_XmlConfig.h"
-#include "NppPluginIface_Markers.h"
+#include "NppPluginIface_ActionIndex.h"
+#include "NppPluginIface_ActionHistory.h"
 #include "NppPluginIface_CmdMap.h"
+#include "NppPluginIface_DocTabMap.h"
 #include "NppPluginIface_ExtLexer.h"
+#include "NppPluginIface_Markers.h"
+#include "NppPluginIface_XmlConfig.h"
 
 namespace npp_plugin {
 

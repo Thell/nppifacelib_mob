@@ -102,63 +102,12 @@ extern "C" __declspec(dllexport) FuncItem * getFuncsArray(int *FuncsArraySize)
 }
 
 
-//---------------------------------------------------------------------------------------------
-//  Notepad++ and Scintilla Communications Processing
-				
-	/*
-	 *  Listings of notifications and messages are in Notepad_plus_msgs.h and Scintilla.h.
-	 *
-	 *  Notifications use the SCNotification structure described in Scintilla.h.
-	 *
-	 */
-
 //  This function gives access to Notepad++'s notification facilities including forwarded
 //  notifications from Scintilla.
 extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 {
-	/*
-	 *  
-	 *  Notifications can be filtered, and language specific handlers called using a
-	 *  Namespace::Function() call.
-	 *
-	 */
 	using namespace npp_plugin;
 
-//#define MSG_DEBUGGING
-#ifdef MSG_DEBUGGING
-	npp_plugin::hCurrViewNeedsUpdate();
-	HWND hView = reinterpret_cast<HWND>(notifyCode->nmhdr.hwndFrom);
-	tstring ViewName;
-	if ( hView == hMainView() ) ViewName.assign( TEXT("MAIN_VIEW") );
-	else if ( hView == hSecondView() ) ViewName.assign( TEXT("SUB_VIEW") );
-	else if ( hView == hNpp() ) ViewName.assign( TEXT("Notepad++") );
-	else ViewName.assign( TEXT("NON_VIEW") );  // ie: Find/Replace
-
-	uptr_t idFrom = notifyCode->nmhdr.idFrom;
-	int idPos = ::SendMessage( hNpp(), NPPM_GETPOSFROMBUFFERID, idFrom, 0);
-	int idPos1 = idPos >> 30;
-	int idPos2 = idPos & 0xdf;
-	int bufferID = ::SendMessage( hView, NPPM_GETCURRENTBUFFERID, 0, 0);
-	static int mvFocusedBuffID = 0;
-	static int svFocusedBuffID = 0;
-	int buffPos = ::SendMessage( hNpp(), NPPM_GETPOSFROMBUFFERID, bufferID, 0);
-	int buffPos1 = buffPos >> 30;
-	int buffPos2 = buffPos & 0xdf;
-	int msg = notifyCode->nmhdr.code;
-	int pDoc = (LRESULT)::SendMessage( hView, SCI_GETDOCPOINTER, 0, 0);
-	int mvPDoc = (LRESULT)::SendMessage( hMainView(), SCI_GETDOCPOINTER, 0, 0);
-	static int mvFocusedPDoc = 0;
-	int svPDoc = (LRESULT)::SendMessage( hSecondView(), SCI_GETDOCPOINTER, 0, 0);
-	static int svFocusedPDoc = 0;
-	int flags = notifyCode->modificationType;
-	TCHAR flagHEX[65];
-	::_itot(flags, flagHEX, 16);
-	TCHAR flag2[65];
-	::_itot(flags, flag2, 2);
-	// Breakpoint string:
-	// {msg} {ViewName} idFrom:{idFrom}:[{idPos1}]:[{idPos2}] buffID:{bufferID}:[{buffPos1}]:[{buffPos2}] Doc:(curr){pDoc}|mv[{mvPDoc}]|sv[{svPDoc}] flags:({flags}):({flagHEX}):({flag2})
-#endif
-	
 	switch (notifyCode->nmhdr.code) 
 	{
 	case SCN_MODIFIED:
@@ -192,14 +141,6 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 		}
 		break;
 
-	case NPPN_FILEBEFOREOPEN:
-		npp_plugin::hCurrViewNeedsUpdate();
-		break;
-
-	case NPPN_FILEOPENED:
-		npp_plugin::hCurrViewNeedsUpdate();
-		break;
-
 	case NPPN_FILEBEFORECLOSE:
 		npp_plugin::hCurrViewNeedsUpdate();
 		p_cm::fileBeforeCloseHandler( notifyCode );
@@ -219,57 +160,8 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 extern "C" __declspec(dllexport) LRESULT messageProc(UINT Message, WPARAM wParam, LPARAM lParam)
 {
 	/*
-	 *  This function give access to Notepad++'s messaging facilities.  It was originally
-	 *  intended for the relay of Notepad++ messages and inter-plugin messages, yet having
-	 *    ::SendMessage( hCurrentView, SOME_MESSAGE_TOKENNAME, value, value );
-	 *  mixed in all over the place was ugly so this plugin uses messageProc to keep all of
-	 *  these in one area.
-	 *
-	 *  This function either returns true or the return value that comes from each individual
-	 *  handler.  So be sure to explicitly state the return in the switch case.
-	 *
-	 *  Use the npp_plugin:: hCurrView, hMainView, hSecondView, and hNpp for the standard handles,
-	 *  some messages needs to be sent to both the main and second handle to get the desired
-	 *  results.  ( Indicator setup messages are one example. )
-	 *
-	 *  See Notepad_plus_msgs.h and Scintilla.h for notification IDs.
-	 *
-	 *  Some messages sent to N++ get forwarded back here by N++ plugin notify.  For instance
-	 *  NPPM_DOOPEN sent to messageProc will recieved a messageProc message again by the
-	 *  pluginNotify routine, so it needs to be sent via ::SendMessage
-	 *
+	 *  This plugin does not make use of messageProc msgs.
 	 */
-
-	using namespace npp_plugin;
-	namespace msg = npp_plugin::messages;
-	namespace mark = npp_plugin::markers;
-
-	// ===>  Include optional messaging handlers here.
-	switch (Message)
-	{
-
-		//  <---  Notepad++ Messages --->
-		case NPPM_MSGTOPLUGIN:
-		{
-			//  Inter-Plugin messaging
-			CommunicationInfo* comm = reinterpret_cast<CommunicationInfo *>(lParam);
-			
-			switch ( comm->internalMsg )
-			{
-
-				default:
-					break;
-
-			break;
-			}
-
-		break;
-		}
-		
-		default:
-			return false;
-
-	}  // End: Switch ( Message )
 
 	return TRUE;
 }

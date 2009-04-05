@@ -85,7 +85,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="IF NOT EXIST $(PluginConfigDir) MKDIR $(PluginConfigDir)&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)($TargetName).xml COPY $(ProjectDir)..\src\$(TargetName).xml $(PluginConfigDir)$(TargetName).xml&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)\Doc MKDIR $(PluginConfigDir)\Doc&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)\Doc\($TargetName)Help.txt COPY $(ProjectDir)..\src\$(TargetName)Help.txt $(PluginConfigDir)\Doc\$(TargetName)Help.txt&#x0D;&#x0A;&#x0D;&#x0A;"
+				CommandLine="IF NOT EXIST $(PluginConfigDir) MKDIR $(PluginConfigDir)&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)($TargetName).xml COPY $(ProjectDir)..\src\$(TargetName).xml $(PluginConfigDir)$(TargetName).xml&#x0D;&#x0A;IF NOT EXIST $(PluginDir)\doc MKDIR $(PluginDir)\doc&#x0D;&#x0A;IF NOT EXIST $(PluginDir)\doc\($TargetName)Help.txt COPY $(ProjectDir)..\src\$(TargetName)Help.txt $(PluginDir)\doc\$(TargetName)Help.txt&#x0D;&#x0A;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -160,7 +160,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="IF NOT EXIST $(PluginConfigDir) MKDIR $(PluginConfigDir)&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)($TargetName).xml COPY $(ProjectDir)..\src\$(TargetName).xml $(PluginConfigDir)$(TargetName).xml&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)\Doc MKDIR $(PluginConfigDir)\Doc&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)\Doc\($TargetName)Help.txt COPY $(ProjectDir)..\src\$(TargetName)Help.txt $(PluginConfigDir)\Doc\$(TargetName)Help.txt&#x0D;&#x0A;&#x0D;&#x0A;"
+				CommandLine="IF NOT EXIST $(PluginConfigDir) MKDIR $(PluginConfigDir)&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)($TargetName).xml COPY $(ProjectDir)..\src\$(TargetName).xml $(PluginConfigDir)$(TargetName).xml&#x0D;&#x0A;IF NOT EXIST $(PluginDir)\doc MKDIR $(PluginDir)\doc&#x0D;&#x0A;IF NOT EXIST $(PluginDir)\doc\($TargetName)Help.txt COPY $(ProjectDir)..\src\$(TargetName)Help.txt $(PluginDir)\doc\$(TargetName)Help.txt&#x0D;&#x0A;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -232,7 +232,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="IF NOT EXIST $(PluginConfigDir) MKDIR $(PluginConfigDir)&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)($TargetName).xml COPY $(ProjectDir)..\src\$(TargetName).xml $(PluginConfigDir)$(TargetName).xml&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)\Doc MKDIR $(PluginConfigDir)\Doc&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)\Doc\($TargetName)Help.txt COPY $(ProjectDir)..\src\$(TargetName)Help.txt $(PluginConfigDir)\Doc\$(TargetName)Help.txt&#x0D;&#x0A;&#x0D;&#x0A;"
+				CommandLine="IF NOT EXIST $(PluginConfigDir) MKDIR $(PluginConfigDir)&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)($TargetName).xml COPY $(ProjectDir)..\src\$(TargetName).xml $(PluginConfigDir)$(TargetName).xml&#x0D;&#x0A;IF NOT EXIST $(PluginDir)\doc MKDIR $(PluginDir)\doc&#x0D;&#x0A;IF NOT EXIST $(PluginDir)\doc\($TargetName)Help.txt COPY $(ProjectDir)..\src\$(TargetName)Help.txt $(PluginDir)\doc\$(TargetName)Help.txt&#x0D;&#x0A;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -307,7 +307,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="IF NOT EXIST $(PluginConfigDir) MKDIR $(PluginConfigDir)&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)($TargetName).xml COPY $(ProjectDir)..\src\$(TargetName).xml $(PluginConfigDir)$(TargetName).xml&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)\Doc MKDIR $(PluginConfigDir)\Doc&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)\Doc\($TargetName)Help.txt COPY $(ProjectDir)..\src\$(TargetName)Help.txt $(PluginConfigDir)\Doc\$(TargetName)Help.txt&#x0D;&#x0A;&#x0D;&#x0A;"
+				CommandLine="IF NOT EXIST $(PluginConfigDir) MKDIR $(PluginConfigDir)&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)($TargetName).xml COPY $(ProjectDir)..\src\$(TargetName).xml $(PluginConfigDir)$(TargetName).xml&#x0D;&#x0A;IF NOT EXIST $(PluginDir)\doc MKDIR $(PluginDir)\doc&#x0D;&#x0A;IF NOT EXIST $(PluginDir)\doc\($TargetName)Help.txt COPY $(ProjectDir)..\src\$(TargetName)Help.txt $(PluginDir)\doc\$(TargetName)Help.txt&#x0D;&#x0A;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>

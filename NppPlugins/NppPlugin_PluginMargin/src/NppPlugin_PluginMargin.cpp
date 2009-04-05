@@ -77,14 +77,8 @@ void initPluginMargin()
 	}
 }
 
-void toggleMV()
-{
-	toggleMargin( MAIN_VIEW );
-}
+void toggleMV() { toggleMargin( MAIN_VIEW ); }
 
-void toggleSV()
-{
-	toggleMargin( SUB_VIEW );
-}
+void toggleSV() { toggleMargin( SUB_VIEW ); }
 
 } // End namespace: npp_plugin_pluginmargin

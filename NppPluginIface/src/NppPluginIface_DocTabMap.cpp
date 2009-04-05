@@ -17,7 +17,8 @@
 
 /*
  *  Notepad++ Plugin Interface Lib extension providing mapping of Notepad++ tab bufferID and
- *  visibility to Scintilla Document pointers.
+ *  visibility to Scintilla Document pointers, as well as tracking the currently open files
+ *  by docID and a docId to bufferID map.
  *
  *  For an example of using this see NppPluginIface_ActionIndex.
  *
@@ -62,6 +63,7 @@ struct DocTab {
 using boost::multi_index::multi_index_container;
 using namespace boost::multi_index;
 
+//  Namespace for the DocTab multi_index_container.
 namespace doctabmap_mic {
 
 //  DocTab_set index key for comp_visible_key.

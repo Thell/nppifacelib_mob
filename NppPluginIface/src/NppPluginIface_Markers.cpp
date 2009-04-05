@@ -242,8 +242,7 @@ void Margin::setMasks( int markerID )
 //  Unsets the mask for all margins in both views so the marker is on the previous target margin.
 void Margin::restorePrevTarget( int markerID ) { setTarget( _prevTarget, markerID ); }
 
-//  Initializes Notepad++ and Scintilla to be able to use the markers from information set from
-//  the xml configuration data.
+//  Initializes Notepad++ and Scintilla to be able to use the markers.
 void Plugin_Line_Marker::init( int markNum )
 {
 	id = markNum;
@@ -286,13 +285,13 @@ bool Plugin_Line_Marker::getXpmDataFile()
 	//  First try the application data folder.
 	TCHAR filePath[MAX_PATH];
 	::SendMessage( npp_plugin::hNpp(), NPPM_GETPLUGINSCONFIGDIR, MAX_PATH, (LPARAM)filePath );
-	PathAppend( filePath, TEXT("\\icons") );
+	PathAppend( filePath, TEXT("\\..\\icons") );
 	PathAppend( filePath, xpmFileName.c_str() );
 
 	if (!PathFileExists(filePath)) {
 		lstrcpyn( filePath, TEXT("\0"), MAX_PATH );
 		::SendMessage( npp_plugin::hNpp(), NPPM_GETNPPDIRECTORY, MAX_PATH, (LPARAM)filePath );
-		PathAppend( filePath, TEXT("plugins\\Config\\icons") );
+		PathAppend( filePath, TEXT("plugins\\icons") );
 		PathAppend( filePath, xpmFileName.c_str() );
 
 		if (!PathFileExists(filePath)) {

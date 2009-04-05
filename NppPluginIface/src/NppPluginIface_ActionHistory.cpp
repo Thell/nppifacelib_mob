@@ -192,7 +192,7 @@ std::pair<ActionHistory_set::iterator, bool> DocumentActionHistory::insertAction
 	return ( retVal );
 }
 
-//  Removes all actions item from the marker history after the current index.
+//  Removes all actions item from the action history after the current index.
 void DocumentActionHistory::truncateActions()
 {
 	int targetIndex = npp_plugin::actionindex::getCurrActionIndex( _currDoc );

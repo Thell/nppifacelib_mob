@@ -193,7 +193,7 @@ void npp_plugin::About_func()
 	::MessageBox(npp_plugin::hNpp(),
 		TEXT("This plugin gives the user control over the Notepad++ marker margin ")
 		TEXT("that has been set aside for use by plugins.\r\n\r\n")
-		TEXT("This plugin was written using the NppPlugin_Interface library.\r\n")
+		TEXT("This plugin was written using the NppPluginIface library.\r\n")
 		TEXT("Author:  Thell Fowler (almostautomated)"),
 		TEXT("About This Plugin"), MB_OK);
 }

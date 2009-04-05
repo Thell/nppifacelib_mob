@@ -520,7 +520,6 @@ void Highlight_Doc(unsigned int startPos, int length, int initStyle, Accessor &s
 
 //  <--- Fold --->
 void Fold_Doc(unsigned int startPos, int length, int initStyle, Accessor &styler)
-//void Fold_Doc(unsigned int startPos, int length, int initStyle, WordList *[], Accessor &styler)
 {
 	// Store both the current line's fold level and the next lines in the
 	// level store to make it easy to pick up with each increment
@@ -651,21 +650,18 @@ void Fold_Doc(unsigned int startPos, int length, int initStyle, Accessor &styler
 //  Updates wordlists.
 void PowerShell_Lexer::updateWordlists(char* words[])
 {
-
 	wl_keywords.Set(words[0]);
 	wl_cmdlets.Set(words[1]);
 	wl_aliases.Set(words[2]);
 	wl_operators.Set(words[3]);
 	wl_cmdletParam.Set(words[4]);
 	wl_parameterValues.Set(words[5]);
-
 }
 
 
 //  Updates highlighters.
 void PowerShell_Lexer::updateHighlighterStyles()
 {
-
 	std::vector<Highlighter>::iterator currHlite = Hlite.begin();
 
 	for ( currHlite; currHlite < Hlite.end(); currHlite++ ) {
@@ -695,7 +691,6 @@ void PowerShell_Lexer::updateHighlighterStyles()
 			currHlite->StyleChanged = false;
 		}
 	}
-
 }
 
 //  Determine if the full document should be processed.
@@ -739,7 +734,6 @@ bool PowerShell_Lexer::doFullDoc( int startPos )
 //  a second view needed updating as well.
 void PowerShell_Lexer::activateAltView()
 {
-
 	lexer.StylesUpdatedCall = true;
 	lexer.processAltView = false;
 	int targetView = ( npp_plugin::intCurrView() == 0 ) ? ( 1 ) : ( 0 );
@@ -752,14 +746,12 @@ void PowerShell_Lexer::activateAltView()
 	//HWND dlgTarget = ::FindWindowW( NULL, TEXT("Style Configurator") );
 	if (lexer.prevHwndFocused) ::SetFocus( lexer.prevHwndFocused );
 	lexer.prevHwndFocused = NULL;
-
 }
 
 
 //  Returns a start position that shouldn't break multiline embedded styles.
 int PowerShell_Lexer::getSafe_Style_StartPos( int currPos )
 {
-
 	int	currLine = _pAccessor->GetLine(currPos);
 
 	bool bSafePos = false;
@@ -778,38 +770,32 @@ int PowerShell_Lexer::getSafe_Style_StartPos( int currPos )
 	}
 
 	return ( _pAccessor->LineStart( currLine ) );
-
 }
 
 //  If a style is a multiline style that can have embedded styles it isn't safe.
 bool PowerShell_Lexer::IsSafe_Style_currPos( int style )
 {
-
 	// List initial styles that can cause styling errors to occur
 	return	style != sID::HERESTRING &&
 			style != sID::STRING &&
 			style != sID::MULTILINECOMMENT &&
 			style != sID::TYPE &&
 			style != sID::VARIABLE;
-
 }
 
 //  If a style is a multiline style that can have embedded styles it isn't safe.
 bool PowerShell_Lexer::IsSafe_Style_prevEOL( int style )
 {
-
 	// List initial styles can cause styling errors to occur
 	return	style != sID::HERESTRING &&
 			style != sID::MULTILINECOMMENT &&
 			style != sID::TYPE &&
 			style != sID::VARIABLE;
-
 }
 
 //  This function compares ints passed to it for equality, terminate with '-1'.
 bool PowerShell_Lexer::IsEqual( const int first, ... ) 
 {
-
 	int i = first, diff = 0;
 	va_list marker;
 
@@ -826,7 +812,6 @@ bool PowerShell_Lexer::IsEqual( const int first, ... )
 	va_end( marker );              // Reset variable arguments.
 
 	return( diff == 0 );
-
 }
 
 
@@ -854,16 +839,13 @@ void PowerShell_Lexer::CaptureEscapeChars(StyleContext &sc)
 // Identify language comment styles (useful for doc folding)
 bool PowerShell_Lexer::IsCommentStyle(int style)
 {
-
 	return	style == sID::COMMENT ||
 			style == sID::MULTILINECOMMENT;
-
 }
 
 // This routine is used in identifying successive HashComment lines
 bool PowerShell_Lexer::IsHashCommentLine(int line)
 {
-
 	int pos = _pAccessor->LineStart(line);
 	int eol_pos = _pAccessor->LineStart(line + 1) - 1;
 
@@ -876,33 +858,26 @@ bool PowerShell_Lexer::IsHashCommentLine(int line)
 	}
 
 	return false;
-
 }
 
 int PowerShell_Lexer::getSafe_Hlite_Pos(int currPos, int length, bool direction)
 {
-
 	//	This function checks for a line that does not have a linestate value indicating a
 	//  multiline indicator and returns the lines start or end position depending on direction.
-
 	int lineChange;
 	int extremeLine;
 	int currLine;
 
 	// Search parameters
 	if ( direction ) {			// DIR_UP
-
 		lineChange = -1;
 		extremeLine = 1;
 		currLine = _pAccessor->GetLine(currPos);
-
 	}
 	else {						// DIR_DOWN
-
 		lineChange = 1;
 		extremeLine = _pAccessor->GetLine( _pAccessor->Length() );
 		currLine = _pAccessor->GetLine( currPos + length );
-
 	}
 
 	// If we are already at the top or bottom of the buffer just return
@@ -921,27 +896,21 @@ int PowerShell_Lexer::getSafe_Hlite_Pos(int currPos, int length, bool direction)
 		 */
 
 		if ( direction ) {
-
 			tmpLine = lexer.lineState.getMultilineStart( currLine );
 			if (! tmpLine ) break;			//  A blank line.  Forcefully escape the do loop.
 			
 			currLine = ( tmpLine < currLine ) ? ( tmpLine ) : ( currLine + lineChange );
-
 		}
 		else {
-
 			tmpLine = lexer.lineState.getMultilineEnd( currLine );
 			if (! tmpLine ) break;			//  A blank line.  Forcefully escape the do loop.
 			
 			currLine = tmpLine > currLine ? tmpLine : currLine + lineChange;
-
 		}
 
 	} while ( ( direction ) ? ( currLine > extremeLine ) : ( currLine < extremeLine ) );
 
-
 	return ( _pAccessor->LineStart( currLine ) );
-
 }
 
 
@@ -952,7 +921,6 @@ int PowerShell_Lexer::getSafe_Hlite_Pos(int currPos, int length, bool direction)
 void LexOrFold(bool foldOrLex, unsigned int startPos, int length, int initStyle,
                   char *words[], WindowID window, char *props)
 {
-
 	// Create and initialize the WindowAccessor (including contained PropSet)
 	PropSet ps;
 	ps.SetMultiple(props);
@@ -968,7 +936,6 @@ void LexOrFold(bool foldOrLex, unsigned int startPos, int length, int initStyle,
 		//  When a wordlist style change happens this updates the wordlists.
 		lexer.updateWordlists( words );
 	}
-
 
 	// foldOrLex is false for lex and true for fold
 	if (foldOrLex) {
@@ -988,8 +955,7 @@ void LexOrFold(bool foldOrLex, unsigned int startPos, int length, int initStyle,
 
 	}
 	else {
-		// Styling entry point.
-		
+		// Styling entry point.	
 		int colourStartPos = startPos;
 		int colourLength = length;
 		int colourInitStyle = initStyle;
@@ -998,19 +964,15 @@ void LexOrFold(bool foldOrLex, unsigned int startPos, int length, int initStyle,
 		int hliteInitStyle = initStyle;
 
 		if ( lexer.doFullDoc( startPos ) ) {
-
 			// This always yields a full document lex from pos 0 to length()
 			colourStartPos = 0;
 			colourLength = wa.Length();
 			hliteStartPos = 0;
 			hliteLength = wa.Length();
-
 		}
 		else {
-
 			// Find a safe entry point to ensure styles and highlighters aren't broken.
 			if (startPos > 0) {
-
 				//  Find the colouring startPos.
 				colourStartPos = lexer.getSafe_Style_StartPos( startPos );
 				colourLength += startPos - colourStartPos;
@@ -1034,20 +996,16 @@ void LexOrFold(bool foldOrLex, unsigned int startPos, int length, int initStyle,
 		Highlight_Doc( hliteStartPos, hliteLength, hliteInitStyle, wa );
 
 		lexer.fullDocProcessing = false;	//  Make sure this is turned off!
-
 	}
 
 	// clean up before leaving
 	wa.Flush();
-
 	if ( lexer.processAltView ) lexer.activateAltView();
-
 }
 
 //  Notepad++ dialog entry point.
 void menuDlg()
 {
-
 	::MessageBox(npp_plugin::hNpp(),
 		TEXT("Thank you for using the PowerShell Script File lexer, brought to you\n")
 		TEXT("by the some of the fine folks in #PowerShell on the Freenode network! \r\n\r\n")
@@ -1061,17 +1019,10 @@ void menuDlg()
 		TEXT("	'Italic'= Erase highlight from leading white-space.\n")
 		TEXT("	'Underline' = Draw highlight 'under' the styled words.\r\n"),
 		TEXT("Notepad++ External PowerShell Lexer"), MB_OK);
-
 }
 
 //  This function returns a pointer to the PowerShell Lexer object.
-PowerShell_Lexer* getLexerObj()
-{
-
-	return ( &lexer);
-
-}
-
+PowerShell_Lexer* getLexerObj() { return ( &lexer); }
 
 //*********************************************************************************************
 //  Notification Handlers.
@@ -1079,7 +1030,6 @@ PowerShell_Lexer* getLexerObj()
 //  This notification handler updates the keyword lists and highlighters and forces a new lexing.
 void WORDSTYLESUPDATEDproc()
 {
-
 	lexer.StylesUpdatedCall = true;
 	lexer.updateHighlighterStyles();
 
@@ -1093,28 +1043,19 @@ void WORDSTYLESUPDATEDproc()
 	lexer.prevHwndFocused = ::GetFocus();
 	
 	if ( ( targetIndex >= 0 ) &&  ( targetSCILEXERID == lIface::getSCILexerIDByName("PowerShell*") ) ) {
-
 		//  The doc in the alternate view is open and needs updating.
 		lexer.processAltView = true;
 		messageProc( NPPM_ACTIVATEDOC, targetView, targetIndex );
-
 	}
 	else {
-
 		//  Restart styling for this view only.
 		messageProc(SCI_STARTSTYLING, -1, 0);
-
 	}
 }
 
-void setDocModified( bool modified ) {
-	lexer.docModified = modified;
-};
+void setDocModified( bool modified ) { lexer.docModified = modified; };
 
-void setLanguageChanged( bool changed) {
-	lexer.languageChanged = changed;
-};
-
+void setLanguageChanged( bool changed) { lexer.languageChanged = changed; };
 
 }	// End: namespace NppExtLexer_PowerShell
 

@@ -34,9 +34,6 @@
  */
 namespace v_getfuncarray = npp_plugin;
 
-//  This plugins namespace alias
-namespace p_template = npp_plugin;
-
 //  <--- Required Plugin Interface Routines --->
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD reasonForCall, LPVOID /*lpReserved*/)
 {

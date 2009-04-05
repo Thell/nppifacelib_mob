@@ -21,7 +21,6 @@
  *
  */
 
-//#include <unordered_map>
 #include <boost/tr1/unordered_map.hpp>  // Storage and mapping of original FuncItem cmdIDs.
 
 #include "NppPluginIface_CmdMap.h"
@@ -57,7 +56,7 @@ int getCmdId ( int cmdId )
 }
 
 //  Creates a mapping of the plugins internal funcItem CmdIDs to the funcItem array pointers
-//  send to N++ during the PluginsManager getFuncItemArray call during plugin loading.
+//  sent to N++ during the PluginsManager getFuncItemArray call during plugin loading.
 //  This makes it possible to use an enum of cmd id values within the plugin without having to
 //  ensure a particular order to the menu funcItems during funcItem initialization.
 void createCmdIdMap ()

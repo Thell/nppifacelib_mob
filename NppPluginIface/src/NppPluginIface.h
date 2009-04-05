@@ -65,14 +65,14 @@ typedef std::basic_string< TCHAR > tstring;
 #endif
 
 //  <--- Initialization Functions --->
-void initPlugin(tstring name, HANDLE hModule);
+void initPlugin(tstring name, HANDLE hModule);	//  Set the module name, and save the module handle.
 void setPluginFuncItem(tstring Name, PFUNCPLUGINCMD pFunction, int cmdID = NULL,
 	   bool init2Check = false, ShortcutKey* pShKey = NULL); //  Store a FuncItem command.
 void setNppReady();								//  Sets flag when Notepad++ is done with start up.
 void hCurrViewNeedsUpdate();					//  Sets flag to update hCurrView.
 
 //  <--- Data Retrieval Functions --->
-HANDLE hModule();								//  Plugin module's handle.
+HANDLE hModule();								//  Returns the plugin module's handle.
 tstring* getModuleName();						//  Returns the dll modules proper name.
 tstring* getModuleBaseName();					//  Returns the dll modules proper name without the .dll extension.
 HWND hNpp();									//  Returns the main Notepad++ handle.

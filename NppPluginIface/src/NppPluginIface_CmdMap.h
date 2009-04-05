@@ -28,7 +28,7 @@
 
 namespace npp_plugin {
 
-void createCmdIdMap ();	//  Creates a cmdID to funcItem mapping prior.
+void createCmdIdMap ();			//  Creates a cmdID to funcItem mapping.
 int getCmdId ( int cmdId );		//  Returns the N++ assigned cmdId matching the plugin's assigned cmdId.
 
 

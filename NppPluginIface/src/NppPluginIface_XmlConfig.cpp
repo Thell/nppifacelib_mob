@@ -277,7 +277,9 @@ bool setGUIConfigValue( tstring name, tstring attrib, tstring value_ )
 	return ( retVal );
 }
 
-//  Returns TiXmlDocument pointer to XmlConfigDoc, for convience reading values outside of GUIConfig node.
+//  Returns TiXmlDocument pointer to XmlConfigDoc, for convience reading values outside
+//  of the GUIConfig node.  See the ChangeMarker plugin initPlugin routine to how how this is
+//  used for working with a wordstyle node.
 TiXmlDocument* get_pXmlPluginConfigDoc()
 {
 	if (! initXmlPluginConfig() ) return ( NULL );

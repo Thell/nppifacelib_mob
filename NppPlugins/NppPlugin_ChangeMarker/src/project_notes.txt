@@ -1,2 +1,1 @@
 - There is a bug in Scintilla marker to line tracking for a marker assigned to line 1.
-  TODO I need to fix and submit a patch for that.
