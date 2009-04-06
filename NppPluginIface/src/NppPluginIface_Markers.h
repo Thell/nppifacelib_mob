@@ -57,26 +57,20 @@ enum MARGIN {
 	NB_MARGINS
 };
 
-//  Un-named namespace for private class/struct/variables.  Mainly used to keep the
-//  interface clean.
-namespace {
+//  Margin control class.
+class Margin
+{
+	MARGIN _target;
+	MARGIN _prevTarget;
+	void setMasks( int markerID );
 
-	//  Margin control class.
-	class Margin
-	{
-		MARGIN _target;
-		MARGIN _prevTarget;
-		void setMasks( int markerID );
+public:
+	void setTarget(MARGIN target, int markerID);
+	MARGIN getTarget() { return _target; };
+	void restorePrevTarget( int markerID );
 
-	public:
-		void setTarget(MARGIN target, int markerID);
-		MARGIN getTarget() { return _target; };
-		void restorePrevTarget( int markerID );
-
-		Margin():_target(MARGIN_BOOKMARK), _prevTarget(MARGIN_BOOKMARK){};
-	};
-
-}  // End: un-named namespace
+	Margin():_target(MARGIN_BOOKMARK), _prevTarget(MARGIN_BOOKMARK){};
+};
 
 //  This class provides the structure and functions that allow for a plugin to interact with
 //  Notepad++ and Scintilla to handle marker configuration and action tracking.
