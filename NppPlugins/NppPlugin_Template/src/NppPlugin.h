@@ -21,8 +21,8 @@
   *  The basic interface enhancement provides plugin registration and handle controls, with 
   *  multiple common ways to access view handles.
   *
-  *  The ExtLexer extension provides styler registration and forces N++ to read a styles
-  *  xml, which makes it easy to add 'Global Styles'.
+  *  The ExtLexer extension provides styler (lexer) registration helper functions for implementing 
+  *  external lexers.
   *
   *  - Both of those also allow for function registration.  The basic difference between the
   *  two function registrations is the base functions display under a separator in the order
