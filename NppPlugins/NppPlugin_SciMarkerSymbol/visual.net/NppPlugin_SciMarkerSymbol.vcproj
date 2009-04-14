@@ -94,7 +94,7 @@
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\..\..\vc_9.0_sln\propsheets\PluginReleaseBuild.vsprops"
-			CharacterSet="1"
+			CharacterSet="2"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -134,6 +134,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="xpm.obj platwin.obj  uniconversion.obj"
 				LinkIncremental="1"
+				ModuleDefinitionFile=""
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
