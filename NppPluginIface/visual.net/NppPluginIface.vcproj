@@ -111,7 +111,6 @@
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="$(NppIncludes); $(SciIncludes)"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
-				RuntimeLibrary="1"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
 				WarningLevel="2"
