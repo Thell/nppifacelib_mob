@@ -58,8 +58,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD reasonForCall, LPVOID /*lpReserved*/
 		setPluginFuncItem(TEXT("Jump: Changed Line Down"), p_cm::jumpLineDown,p_cm::CMD_JUMPLINEDOWN);
 		setPluginFuncItem(TEXT(""), NULL);	//  A separator line.
 		setPluginFuncItem(TEXT("Display: Line Number Margin"), p_cm::displayWithLineNumbers, p_cm::CMD_LINENUMBER , true);
-		setPluginFuncItem(TEXT("Display: Bookmark Margin"), p_cm::displayWithBookMarks, p_cm::CMD_BOOKMARK, true);
-		setPluginFuncItem(TEXT("Display: Plugin Marker Margin"), p_cm::displayInPluginMargin, p_cm::CMD_PLUGIN, true);
+		setPluginFuncItem(TEXT("Display: Change Mark Margin"), p_cm::displayWithChangeMarks, p_cm::CMD_CHANGEMARK, true);
 		setPluginFuncItem(TEXT("Display: As Line Highlight"), p_cm::displayAsHighlight, p_cm::CMD_HIGHLIGHT, true);
 		setPluginFuncItem(TEXT(""), NULL);	//  A separator line.
 		setPluginFuncItem(TEXT("Disable Tracking for this Document"), p_cm::disableDoc, p_cm::CMD_DISABLEDOC, true);
@@ -124,6 +123,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 		npp_plugin::setNppReady();
 		npp_plugin::hCurrViewNeedsUpdate();
 		npp_plugin::doctabmap::update_DocTabMap();
+		p_cm::wordStylesUpdatedHandler();	//  Force an init of the style controller.
 		break;
 
 	case NPPN_TBMODIFICATION:
@@ -138,6 +138,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 		if ( isNppReady() ) {
 			npp_plugin::hCurrViewNeedsUpdate();
 			npp_plugin::doctabmap::update_DocTabMap();
+			p_cm::bufferActivatedHandler( notifyCode );
 		}
 		break;
 
@@ -159,9 +160,17 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *notifyCode)
 
 extern "C" __declspec(dllexport) LRESULT messageProc(UINT Message, WPARAM wParam, LPARAM lParam)
 {
-	/*
-	 *  This plugin does not make use of messageProc msgs.
-	 */
+	//  Normally a plugin would use a switch case to check the Messages, but
+	//  this plugin only makes use of a single internal message...
+
+	if ( Message == npp_plugin::PIFACE_MSG_NPPDATASET ) {
+		//  Confirm availability of the config file.
+		TiXmlDocument * xmlDoc( npp_plugin::xmlconfig::get_pXmlPluginConfigDoc( true ) );
+		if (! xmlDoc ) {
+			//  Create a new default config file.
+			p_cm::generateDefaultConfigXml();
+		}
+	}
 
 	return TRUE;
 }
@@ -170,11 +179,16 @@ extern "C" __declspec(dllexport) LRESULT messageProc(UINT Message, WPARAM wParam
 void npp_plugin::About_func() 
 {
 	::MessageBox(npp_plugin::hNpp(),
-		TEXT("  Change Markers is a plugin that marks lines that have changed\n")
-		TEXT("  in a document since it was last saved and since it was last loaded.\r\n\r\n")
-		TEXT("  You can also setup a shortcut for jumpPrevChange and jumpNextChange to\n")
-		TEXT("  move through the current document.\r\n\r\n")
-		TEXT("  Hopefully you find it to be a useful tool.  Enjoy!\r\n")
+		TEXT("  Change Markers is a plugin that marks lines that have changed in a document since it was")
+		TEXT("  since it was last loaded, and since it was last saved.\r\n\r\n")
+		TEXT("  You can view lines with un-saved changes using the Jump menu commands.\n" )
+		TEXT("  Use Jump: Prev Change and Next Change to move through the changes in the order they were made.\n")
+		TEXT("  Use Jump: Changed Line Up and Down to move to the first un-saved change found in the direction chosen.\r\n\r\n")
+		TEXT("  Disabling change tracking for a document will clear all markers and reset the change tracker.  This\n")
+		TEXT("  can be used to clear old change marks, and keep your undo history, and not need to reload the document.\n") 
+		TEXT("  Disabling the whole plugin will stop all change processing.  If you have several large documents and\n")
+		TEXT("  will be doing bulk changes disabling the plugin will help speed up the process.\r\n\r\n")
+		TEXT("  Hopefully you find this to be a useful tool.  Enjoy!\r\n")
 		TEXT("  Thell Fowler (almostautomated)"),
-		TEXT("About This Plugin"), MB_OK);
+		TEXT("Change Markers 1.1.0"), MB_OK);
 }

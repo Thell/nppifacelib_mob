@@ -64,6 +64,10 @@ typedef std::basic_string< TCHAR > tstring;
 	#define TMEMCPY memcpy
 #endif
 
+//  This message is sent as soon as NppData is set.
+//  If a plugin makes use of configuration files it can confirm availability or generate default values.
+const int PIFACE_MSG_NPPDATASET = ( NPPN_FIRST );
+
 //  <--- Initialization Functions --->
 void initPlugin(tstring name, HANDLE hModule);	//  Set the module name, and save the module handle.
 void setPluginFuncItem(tstring Name, PFUNCPLUGINCMD pFunction, int cmdID = NULL,

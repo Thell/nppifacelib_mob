@@ -86,7 +86,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="IF NOT EXIST $(PluginConfigDir) MKDIR $(PluginConfigDir)&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)($TargetName).xml COPY $(ProjectDir)..\src\$(TargetName).xml $(PluginConfigDir)$(TargetName).xml&#x0D;&#x0A;IF NOT EXIST $(PluginDir)\icons\ MKDIR $(PluginDir)\icons\&#x0D;&#x0A;IF NOT EXIST $(PluginDir)\icons\cm_saved.xpm COPY $(ProjectDir)..\src\cm_saved.xpm $(PluginDir)\icons\cm_saved.xpm&#x0D;&#x0A;IF NOT EXIST $(PluginDir)\icons\cm_notsaved.xpm COPY $(ProjectDir)..\src\cm_notsaved.xpm $(PluginDir)\icons\cm_notsaved.xpm&#x0D;&#x0A;"
+				CommandLine=""
 			/>
 		</Configuration>
 		<Configuration
@@ -162,7 +162,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="IF NOT EXIST $(PluginConfigDir) MKDIR $(PluginConfigDir)&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)($TargetName).xml COPY $(ProjectDir)..\src\$(TargetName).xml $(PluginConfigDir)$(TargetName).xml&#x0D;&#x0A;IF NOT EXIST $(PluginDir)\icons\ MKDIR $(PluginDir)\icons\&#x0D;&#x0A;IF NOT EXIST $(PluginDir)\icons\cm_saved.xpm COPY $(ProjectDir)..\src\cm_saved.xpm $(PluginDir)\icons\cm_saved.xpm&#x0D;&#x0A;IF NOT EXIST $(PluginDir)\icons\cm_notsaved.xpm COPY $(ProjectDir)..\src\cm_notsaved.xpm $(PluginDir)\icons\cm_notsaved.xpm&#x0D;&#x0A;"
+				CommandLine=""
 			/>
 		</Configuration>
 		<Configuration
@@ -235,7 +235,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="IF NOT EXIST $(PluginConfigDir) MKDIR $(PluginConfigDir)&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)($TargetName).xml COPY $(ProjectDir)..\src\$(TargetName).xml $(PluginConfigDir)$(TargetName).xml&#x0D;&#x0A;IF NOT EXIST $(PluginDir)\icons\ MKDIR $(PluginDir)\icons\&#x0D;&#x0A;IF NOT EXIST $(PluginDir)\icons\cm_saved.xpm COPY $(ProjectDir)..\src\cm_saved.xpm $(PluginDir)\icons\cm_saved.xpm&#x0D;&#x0A;IF NOT EXIST $(PluginDir)\icons\cm_notsaved.xpm COPY $(ProjectDir)..\src\cm_notsaved.xpm $(PluginDir)\icons\cm_notsaved.xpm&#x0D;&#x0A;"
+				CommandLine=""
 			/>
 		</Configuration>
 		<Configuration
@@ -310,7 +310,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="IF NOT EXIST $(PluginConfigDir) MKDIR $(PluginConfigDir)&#x0D;&#x0A;IF NOT EXIST $(PluginConfigDir)($TargetName).xml COPY $(ProjectDir)..\src\$(TargetName).xml $(PluginConfigDir)$(TargetName).xml&#x0D;&#x0A;IF NOT EXIST $(PluginDir)\icons\ MKDIR $(PluginDir)\icons\&#x0D;&#x0A;IF NOT EXIST $(PluginDir)\icons\cm_saved.xpm COPY $(ProjectDir)..\src\cm_saved.xpm $(PluginDir)\icons\cm_saved.xpm&#x0D;&#x0A;IF NOT EXIST $(PluginDir)\icons\cm_notsaved.xpm COPY $(ProjectDir)..\src\cm_notsaved.xpm $(PluginDir)\icons\cm_notsaved.xpm&#x0D;&#x0A;"
+				CommandLine=""
 			/>
 		</Configuration>
 	</Configurations>
@@ -350,19 +350,7 @@
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
-			<File
-				RelativePath="..\src\cm_notsaved.xpm"
-				>
-			</File>
-			<File
-				RelativePath="..\src\cm_saved.xpm"
-				>
-			</File>
 		</Filter>
-		<File
-			RelativePath="..\src\NppPlugin_ChangeMarker.xml"
-			>
-		</File>
 		<File
 			RelativePath="..\src\project_notes.txt"
 			>

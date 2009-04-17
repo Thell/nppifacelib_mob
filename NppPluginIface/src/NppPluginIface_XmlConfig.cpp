@@ -78,10 +78,11 @@ bool _GUIConfig_set_initialized = false;
 //  Initialize pointer to the TiXmlDocument Plugin Configuration Document for this plugin.
 //  Checks for existence in user config directory then in the N++ plugins config directory.
 //  Returns true if successful.
-bool initXmlPluginConfig()
+//  When silent == true no message is displayed to the user on load failure.
+bool initXmlPluginConfig( bool silent = false )
 {
 	bool retVal = false;
-	if ( _pXmlPluginConfigDoc ) return true;
+	if (! _pXmlPluginConfigDoc == NULL ) return true;
 
 	tstring baseModuleName = npp_plugin::getModuleBaseName()->c_str();
 
@@ -91,41 +92,43 @@ bool initXmlPluginConfig()
 	PathAppend( xmlPath, baseModuleName.c_str() );
 	PathAddExtension(xmlPath, TEXT(".xml"));
 
-	if (!PathFileExists(xmlPath))
-	{
+	if (!PathFileExists(xmlPath)) {
 		lstrcpyn( xmlPath, TEXT("\0"), MAX_PATH );
 		::SendMessage( npp_plugin::hNpp(), NPPM_GETNPPDIRECTORY, MAX_PATH, (LPARAM)xmlPath );
 		PathAppend( xmlPath, TEXT("plugins\\Config") );
 		PathAppend( xmlPath, baseModuleName.c_str() );
 		PathAddExtension(xmlPath, TEXT(".xml"));
 
-		if (!PathFileExists(xmlPath))
-		{
-			tstring msgText;
-			msgText.assign( TEXT("The configuration file ") );
-			msgText.append( baseModuleName );
-			msgText.append( TEXT(".xml for the '") );
-			msgText.append( npp_plugin::getName() );
-			msgText.append( TEXT("' plugin was not found!") );
+		if (! PathFileExists(xmlPath) ) {
+			if ( ! silent ) {
+				tstring msgText;
+				msgText.assign( TEXT("The configuration file ") );
+				msgText.append( baseModuleName );
+				msgText.append( TEXT(".xml for the '") );
+				msgText.append( npp_plugin::getName() );
+				msgText.append( TEXT("' plugin was not found!") );
 
-			::MessageBox( npp_plugin::hNpp(), msgText.c_str() , TEXT("Plugin File Load Error"), MB_ICONERROR );
+				::MessageBox( npp_plugin::hNpp(), msgText.c_str() , TEXT("Plugin File Load Error"), MB_ICONERROR );
+			}
 			return false;
 		}
 	}
 
 	_pXmlPluginConfigDoc = new TiXmlDocument(xmlPath);
 
-	if ( !_pXmlPluginConfigDoc->LoadFile() )
-	{
+	if (! _pXmlPluginConfigDoc->LoadFile() ) {
 		delete _pXmlPluginConfigDoc;
 		_pXmlPluginConfigDoc = NULL;
-			
-		tstring msgText;
-		msgText.assign( TEXT("The configuration file for ") );
-		msgText.append( npp_plugin::getName() );
-		msgText.append( TEXT(" failed to load!") );
+		
+		if (! silent ) {
+			tstring msgText;
+			msgText.assign( TEXT("The configuration file for ") );
+			msgText.append( npp_plugin::getName() );
+			msgText.append( TEXT(" failed to load!") );
 
-		::MessageBox( npp_plugin::hNpp(), msgText.c_str() , TEXT("Plugin File Load Error"), MB_ICONERROR );
+			::MessageBox( npp_plugin::hNpp(), msgText.c_str() , TEXT("Plugin File Load Error"), MB_ICONERROR );
+		}
+
 		retVal = false;
 	}
 
@@ -241,9 +244,9 @@ tstring getGUIConfigValue( tstring name, tstring attrib )
 	return ( retVal );
 }
 
-//  Writes a GUIConfig value to the registered plugins Xml Plugin Config file.
+//  Sets a GUIConfig value to the registered plugins Xml Plugin Config file.
 //
-//  ex: writeGUIConfigValue( TEXT("MAIN_VIEW"), TEXT("changeMark"), TEXT("hide") );
+//  ex: setGUIConfigValue( TEXT("MAIN_VIEW"), TEXT("changeMark"), TEXT("hide") );
 bool setGUIConfigValue( tstring name, tstring attrib, tstring value_ )
 {
 	bool retVal = false;
@@ -280,9 +283,9 @@ bool setGUIConfigValue( tstring name, tstring attrib, tstring value_ )
 //  Returns TiXmlDocument pointer to XmlConfigDoc, for convience reading values outside
 //  of the GUIConfig node.  See the ChangeMarker plugin initPlugin routine to how how this is
 //  used for working with a wordstyle node.
-TiXmlDocument* get_pXmlPluginConfigDoc()
+TiXmlDocument* get_pXmlPluginConfigDoc(bool silent)
 {
-	if (! initXmlPluginConfig() ) return ( NULL );
+	if (! initXmlPluginConfig( silent ) ) return ( NULL );
 	return ( _pXmlPluginConfigDoc );
 }
 

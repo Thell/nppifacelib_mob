@@ -72,6 +72,8 @@ extern "C" __declspec(dllexport) void setInfo(NppData NppData)
 	_hNpp = NppData._nppHandle;
 	_hScintillaMain = NppData._scintillaMainHandle;
 	_hScintillaSecond = NppData._scintillaSecondHandle;
+
+	messageProc( PIFACE_MSG_NPPDATASET, 0, 0 );
 }
 
 //  Update handle pointer to the currently active view.

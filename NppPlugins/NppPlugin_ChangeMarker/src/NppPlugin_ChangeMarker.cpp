@@ -48,23 +48,24 @@ void Change_Mark::setTargetMarginMenuItem( MARGIN target )
 		int cmdID;
 		switch ( menuTarget )
 		{
-		case MARGIN_BOOKMARK:
-			cmdID = getCmdId( CMD_BOOKMARK );
+		case MARGIN_CHANGES:
+			if ( i == UNCHECK ) {
+				::SendMessage( hMainView(), SCI_SETMARGINWIDTHN, MARGIN_CHANGES, 0 );
+				::SendMessage( hSecondView(), SCI_SETMARGINWIDTHN, MARGIN_CHANGES, 0 );
+			}
+			else {
+				//  Since this margin is reserved by N++ we can completely exclude other markers from it.
+				::SendMessage( hMainView(), SCI_SETMARGINMASKN, MARGIN_CHANGES, 0 );
+				::SendMessage( hMainView(), SCI_SETMARGINWIDTHN, MARGIN_CHANGES, 3 );
+				::SendMessage( hSecondView(), SCI_SETMARGINMASKN, MARGIN_CHANGES, 0 );
+				::SendMessage( hSecondView(), SCI_SETMARGINWIDTHN, MARGIN_CHANGES, 3 );
+			}
+			cmdID = getCmdId( CMD_CHANGEMARK );
 			break;
 		case MARGIN_LINENUMBER:
-			if ( ( i == CHECK ) && ( this->type != SC_MARK_LEFTRECT ) ) {
-				//  Only allow _LEFTRECT type in LineNumber margin.
-				this->markerOverride( SC_MARK_LEFTRECT );
-			}
-			else if ( ( i == UNCHECK ) && (menuTarget == MARGIN_LINENUMBER) &&
-				( this->_tempMarkerOverride ) ) this->resetOverride();
-
 			cmdID = getCmdId( CMD_LINENUMBER );
 			break;
-		case MARGIN_PLUGIN:
-			cmdID = getCmdId( CMD_PLUGIN );
-			break;
-		default:
+		case MARGIN_NONE:
 			cmdID = getCmdId( CMD_HIGHLIGHT );
 			break;
 		}
@@ -74,7 +75,7 @@ void Change_Mark::setTargetMarginMenuItem( MARGIN target )
 	//  Set the new target marker margin.
 	this->margin.setTarget( target, this->id );
 	//  Write config value to file.
-	xml::setGUIConfigValue( TEXT("SciMarkers"), TEXT("targetMargin"), mark::margin2string(target) );
+	xml::setGUIConfigValue( TEXT("SciMarkers"), TEXT("margin"), mark::margin2string(target) );
 
 }
 
@@ -632,113 +633,114 @@ int ChangedDocument::getNextChangeLine(bool direction)
 //  Initializes the plugin and sets up config values.
 void initPlugin()
 {
-	//  Global Plugin Settings
-	bool _track = false;
-	if ( xml::getGUIConfigValue( TEXT("SciMarkers"), TEXT("trackUNDOREDO") ) == TEXT("true") ) _track = true;
-
-	bool _active = false;
-	if ( xml::getGUIConfigValue( TEXT("SciMarkers"), TEXT("active") ) == TEXT("true") ) _active = true;
-
 	int _margin = mark::string2margin( xml::getGUIConfigValue( TEXT("SciMarkers"), TEXT("margin") ) );
 
 	//  Marker Specific Settings
 	for ( int i = 0; i < NB_CHANGEMARKERS; i++ ) {
-		Change_Mark* currCM = new Change_Mark;
-
-		//  ID Settings.
-		currCM->markName = ( i == CM_SAVED ) ? ( TEXT("CM_SAVED") ) : ( TEXT("CM_NOTSAVED") );
-		currCM->styleName = ( i == CM_SAVED ) ? ( TEXT("Changes: Saved") ) : ( TEXT("Changes: Not Saved") );
+		cm[i] = new Change_Mark;
 
 		//  Style Settings.  From WordsStyle node ( outside of GuiConfig element )
+		cm[i]->styleName = ( i == CM_SAVED ) ? ( TEXT("Changes: Saved") ) : ( TEXT("Changes: Not Saved") );
+		cm[i]->type = SC_MARK_LEFTRECT;
+
 		TiXmlHandle hXmlDoc( xml::get_pXmlPluginConfigDoc() );
+
 		TiXmlElement* style_Node = hXmlDoc.FirstChild( 
 			TEXT("NotepadPlus")).FirstChild( TEXT("LexerStyles")).FirstChild(
 			TEXT("LexerType")).FirstChildElement( TEXT("WordsStyle") ).Element();
 
 		for( style_Node; style_Node; style_Node = style_Node->NextSiblingElement() ) {
 			tstring elemAttr_Name( style_Node->Attribute( TEXT("name") ) );
-			if ( elemAttr_Name.compare( currCM->styleName ) == 0 ) {
+			if ( elemAttr_Name.compare( cm[i]->styleName ) == 0 ) {
 				unsigned long result = ::_tcstol( (LPCTSTR)style_Node->Attribute( TEXT("bgColor") ), NULL, 16 );
-				currCM->back = (RGB((result >> 16) & 0xFF, (result >> 8) & 0xFF, result & 0xFF)) | (result & 0xFF000000);
+				cm[i]->back = (RGB((result >> 16) & 0xFF, (result >> 8) & 0xFF, result & 0xFF)) | (result & 0xFF000000);
 				break;
 			}
 		}
 
-		//  Marker View Settings
-		currCM->active = _active;
-		currCM->display =
-			( xml::getGUIConfigValue( currCM->markName, TEXT("displayMark") ) == TEXT("true") ) ? ( true ) : ( false );
-		currCM->type = mark::string2marker( xml::getGUIConfigValue( currCM->markName, TEXT("markType") ) );
-		if ( currCM->type == SC_MARK_PIXMAP ) {
-			currCM->xpmFileName.assign( xml::getGUIConfigValue( currCM->markName, TEXT("xpm") ) );
+		cm[i]->_origTargetMargin = _margin;
 
-			// This should be in the marker extension.
-			if (! currCM->xpmFileName.compare( currCM->xpmFileName.length() - 4, 4, TEXT(".xpm") ) == 0 ) 
-				currCM->xpmFileName.append( TEXT(".xpm") );
+		// Initialize the marker
+		cm[i]->init( CM_BASEID + i);
+		if ( _margin == MARGIN_CHANGES ) {
+			::SendMessage( hMainView(), SCI_SETMARGINMASKN, MARGIN_CHANGES, 1 << cm[i]->id );
+			::SendMessage( hSecondView(), SCI_SETMARGINMASKN, MARGIN_CHANGES, 1 << cm[i]->id );
 		}
-		currCM->alpha = 
-			::_tcstol( (LPCTSTR)(xml::getGUIConfigValue( currCM->markName, TEXT("alpha") ).c_str() ), NULL, 16 );
-
-		//  Margin View Settings
-		currCM->_origTargetMargin = _margin;
-
-		//  Handle linenumber margin special markertype case.
-		//  The only marker that should be used in the linenumber margin is _LEFTRECT
-		cm[i] = currCM;
+		cm[i]->margin.setTarget( MARGIN( _margin ), cm[i]->id );
+		cm[i]->setTargetMarginMenuItem( cm[i]->margin.getTarget() );
 	}
 
 	//  Now that all the config values are set...
-	if (! _track ) {
+	if (! ( xml::getGUIConfigValue( TEXT("SciMarkers"), TEXT("trackUNDOREDO") ) == TEXT("true") ) ) {
 		npp_plugin_changemarker::disablePlugin();
 		return;
 	}
-
-	bool retry = true;
-	while ( retry ) {
-		retry = false;
-		int* markResults = getAvailableMarkers( NB_CHANGEMARKERS );
-		
-		if ( ( markResults[0] == -1 ) && ( markResults[NB_MAX_PLUGINMARKERS - 1] == -1 ) ) {
-
-			tstring errMsg = TEXT("A communication error has occurred between this plugin (");
-			errMsg.append( getModuleBaseName()->c_str() );
-			errMsg.append( TEXT(") and SciMarkerSymbol while configuring markers.\r\n") );
-			errMsg.append( TEXT("This could be due to plugin load order or a missing plugin") );
-			errMsg.append( TEXT(" file, would you like to try again?") );
-
-			int msgboxReply =
-				::MessageBox( hNpp(), errMsg.c_str(), TEXT("Plugin Communication Error!"), MB_RETRYCANCEL| MB_ICONWARNING );
-
-			if ( msgboxReply == IDRETRY ) {
-				retry = true;
-			}
-			else {
-				npp_plugin_changemarker::disablePlugin();
-				break;
-			}
-		}
-		else {
-			initMarker( markResults );
-			break;
-		}
-	}
 }
 
-//  Initalizes the markers found for this plugin.
-void initMarker( int* markerArray )
+//  When a config file is not able to be found this routine generates a default one.
+bool generateDefaultConfigXml()
 {
-	int currMarker = 0;
-	for ( int i = 0; i < NB_MAX_PLUGINMARKERS; i++ ) {
-		if ( markerArray[i] == 1 ) {
-			//  initialize this marker
-			cm[currMarker]->init(i);
-			cm[currMarker]->margin.setTarget( MARGIN( cm[currMarker]->_origTargetMargin ), cm[currMarker]->id );
-			cm[currMarker]->setTargetMarginMenuItem( cm[currMarker]->margin.getTarget() );
-			if ( currMarker == NB_CHANGEMARKERS ) break;
-			currMarker++;
-		}
-	}
+	TiXmlDocument doc;
+	TiXmlDeclaration * decl = new TiXmlDeclaration( TEXT("1.0"), TEXT("Windows-1252"), TEXT("No") );
+	doc.LinkEndChild( decl );
 
+	TiXmlComment * comment1 = new TiXmlComment();
+	comment1->SetValue( TEXT("This is the configuration and state file for Notepad++ Change Markers.") );
+	doc.LinkEndChild( comment1 );
+
+	TiXmlComment * comment2 = new TiXmlComment();
+	comment2->SetValue( TEXT("These values should not be changed manually.") );
+	doc.LinkEndChild( comment2 );
+
+	TiXmlElement * root = new TiXmlElement( TEXT("NotepadPlus") );
+	doc.LinkEndChild( root );
+
+	TiXmlElement * node_language = new TiXmlElement( TEXT("Languages") );
+	root->LinkEndChild( node_language );
+
+	TiXmlElement * element_language = new TiXmlElement( TEXT("Language") );
+	element_language->SetAttribute( TEXT("name"), TEXT("Change Marks") );
+	element_language->SetAttribute( TEXT("ext"), TEXT("") );
+	node_language->LinkEndChild( element_language );
+
+	TiXmlElement * node_lexerStyle = new TiXmlElement( TEXT("LexerStyles") );
+	root->LinkEndChild( node_lexerStyle );
+
+	TiXmlElement * element_lexerType = new TiXmlElement( TEXT("LexerType") );
+	element_lexerType->SetAttribute( TEXT("name"), TEXT("Change Marks") );
+	element_lexerType->SetAttribute( TEXT("desc"), TEXT("Change Marks") );
+	element_lexerType->SetAttribute( TEXT("ext"), TEXT("") );
+	element_lexerType->SetAttribute( TEXT("excluded"), TEXT("yes") );
+	node_lexerStyle->LinkEndChild( element_lexerType );
+
+	TiXmlElement * element_wordStyle1 = new TiXmlElement( TEXT("WordsStyle") );
+	element_wordStyle1->SetAttribute( TEXT("name"), TEXT("Changes: Saved") );
+	element_wordStyle1->SetAttribute( TEXT("styleID"), TEXT("0") );
+	element_wordStyle1->SetAttribute( TEXT("bgColor"), TEXT("A4FFA4") );
+	element_lexerType->LinkEndChild( element_wordStyle1 );
+
+	TiXmlElement * element_wordStyle2 = new TiXmlElement( TEXT("WordsStyle") );
+	element_wordStyle2->SetAttribute( TEXT("name"), TEXT("Changes: Not Saved") );
+	element_wordStyle2->SetAttribute( TEXT("styleID"), TEXT("0") );
+	element_wordStyle2->SetAttribute( TEXT("bgColor"), TEXT("FFFC71") );
+	element_lexerType->LinkEndChild( element_wordStyle2 );
+
+	TiXmlElement * node_guiConfig = new TiXmlElement( TEXT("GUIConfigs") );
+	root->LinkEndChild( node_guiConfig );
+
+	TiXmlElement * element_guiConfig = new TiXmlElement( TEXT("GUIConfig") );
+	element_guiConfig->SetAttribute( TEXT("name"), TEXT("SciMarkers") );
+	element_guiConfig->SetAttribute( TEXT("trackUNDOREDO"), TEXT("true") );
+	element_guiConfig->SetAttribute( TEXT("margin"), TEXT("MARGIN_CHANGES") );
+	node_guiConfig->LinkEndChild( element_guiConfig );
+
+	tstring baseModuleName = npp_plugin::getModuleBaseName()->c_str();
+	TCHAR targetPath[MAX_PATH];
+	::SendMessage( hNpp(), NPPM_GETPLUGINSCONFIGDIR, MAX_PATH, (LPARAM)targetPath );
+	PathAppend( targetPath, baseModuleName.c_str() );
+	PathAddExtension( targetPath, TEXT(".xml") );
+
+	return ( doc.SaveFile( targetPath ) );
 }
 
 //  Change Jumping.  Direction 'true' moves to more recent change.
@@ -815,7 +817,6 @@ void wordStylesUpdatedHandler()
 	//  Marker Specific Settings
 	for ( int i = 0; i < NB_CHANGEMARKERS; i++ ) {
 		Change_Mark* newCM = new Change_Mark;
-		newCM->markName = ( i == CM_SAVED ) ? ( TEXT("CM_SAVED") ) : ( TEXT("CM_NOTSAVED") );
 		newCM->styleName = ( i == CM_SAVED ) ? ( TEXT("Changes: Saved") ) : ( TEXT("Changes: Not Saved") );
 
 		//  Style Settings.  From WordsStyle node ( outside of GuiConfig element )
@@ -836,9 +837,6 @@ void wordStylesUpdatedHandler()
 		Change_Mark* currCM = cm[i];
 		if (! ( currCM->fore == newCM->fore && currCM->back == newCM->back ) ) {
 			cm[i]->back = newCM->back;
-			//  If an alpha wasn't defined in the xml force a recalculation of it based on the new color.
-			if ( xml::getGUIConfigValue( newCM->styleName, TEXT("alpha") ).empty() ) cm[i]->alpha = -1;
-			
 			cm[i]->init( cm[i]->id );
 		}
 	}
@@ -952,6 +950,23 @@ void modificationHandler ( SCNotification* scn )
 	}
 }
 
+
+//  Verifies the menu state is properly activated for the activated buffer.
+void bufferActivatedHandler( SCNotification *scn )
+{
+	if ( _doDisable ) return;
+
+	int pDoc = npp_plugin::doctabmap::getVisibleDocId_by_View( npp_plugin::intCurrView() );
+
+	bool menu_enabled = true;
+
+	if ( _doc_disabled_set.find( pDoc ) != _doc_disabled_set.end() ) {
+		menu_enabled = false;
+	}
+
+	setMenuState( menu_enabled );
+}
+
 //  Alters the state of current Changes: Not Saved markers to Changes: Saved.
 void fileSaveHandler ()
 {
@@ -993,22 +1008,16 @@ void displayWithLineNumbers()
 }
 
 //  Global display margin control
-void displayWithBookMarks()
+void displayWithChangeMarks()
 {
-	cm[CM_SAVED]->setTargetMarginMenuItem( MARGIN_BOOKMARK );
-	cm[CM_NOTSAVED]->setTargetMarginMenuItem( MARGIN_BOOKMARK );
-}
-
-//  Global display margin control
-void displayInPluginMargin()
-{
-	cm[CM_SAVED]->setTargetMarginMenuItem( MARGIN_PLUGIN );
-	cm[CM_NOTSAVED]->setTargetMarginMenuItem( MARGIN_PLUGIN );
+	cm[CM_SAVED]->setTargetMarginMenuItem( MARGIN_CHANGES );
+	cm[CM_NOTSAVED]->setTargetMarginMenuItem( MARGIN_CHANGES );
 }
 
 //  Global display margin control
 //  Removes the change marker from each margin marker mask, forcing the markers to
 //  be displayed as line highlights using the highlighter style information.
+//  If the markers are already being displayed as highlights this hides the markers.
 void displayAsHighlight()
 {
 	cm[CM_SAVED]->setTargetMarginMenuItem( MARGIN_NONE );

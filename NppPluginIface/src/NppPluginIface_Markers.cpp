@@ -168,7 +168,7 @@ int string2margin( tstring szMargin )
 		scmargin[ TEXT("MARGIN_LINENUMBER") ] = MARGIN_LINENUMBER;
 		scmargin[ TEXT("MARGIN_BOOKMARK") ] = MARGIN_BOOKMARK;
 		scmargin[ TEXT("MARGIN_FOLD") ] = MARGIN_FOLD;
-		scmargin[ TEXT("MARGIN_RESERVED") ] = MARGIN_RESERVED;
+		scmargin[ TEXT("MARGIN_CHANGES") ] = MARGIN_CHANGES;
 		scmargin[ TEXT("MARGIN_PLUGIN") ] = MARGIN_PLUGIN;
 	}
 
@@ -192,7 +192,7 @@ tstring margin2string( int margin )
 		scmarginstrings[ MARGIN_LINENUMBER ] = TEXT("MARGIN_LINENUMBER");
 		scmarginstrings[ MARGIN_BOOKMARK ] = TEXT("MARGIN_BOOKMARK");
 		scmarginstrings[ MARGIN_FOLD ] = TEXT("MARGIN_FOLD");
-		scmarginstrings[ MARGIN_RESERVED ] = TEXT("MARGIN_RESERVED");
+		scmarginstrings[ MARGIN_CHANGES ] = TEXT("MARGIN_CHANGES");
 		scmarginstrings[ MARGIN_PLUGIN ] = TEXT("MARGIN_PLUGIN");
 	}
 
@@ -209,7 +209,7 @@ tstring margin2string( int margin )
 //  setting the mask on markers so the marker will be properly assigned.
 void Margin::setTarget( MARGIN target, int markerID )
 {
-	if ( (target == MARGIN_FOLD) || (target == MARGIN_RESERVED) ) return;
+	if ( (target == MARGIN_FOLD) ) return;
 	
 	_prevTarget = _target;
 	_target = target;

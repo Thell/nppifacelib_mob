@@ -36,9 +36,9 @@ enum MENU_COMMANDS {
 	CMD_JUMPLINEUP,
 	CMD_JUMPLINEDOWN,
 	CMD_LINENUMBER,
-	CMD_BOOKMARK,
-	CMD_PLUGIN,
+	CMD_CHANGEMARK,
 	CMD_HIGHLIGHT,
+	CMD_HIDEMARKS,
 	CMD_DISABLEDOC,
 	CMD_DISABLEPLUGIN,
 	NB_MENU_COMMANDS
@@ -59,6 +59,7 @@ enum CM_ACTION {
 
 
 //  Markers
+const int CM_BASEID = 20;
 enum CHANGE_MARK {
 	CM_SAVED,
 	CM_NOTSAVED,
@@ -77,6 +78,7 @@ public:
 	void setTargetMarginMenuItem( MARGIN target );
 	void markerOverride( int markerType );
 	void resetOverride();
+	void setDisplay(bool show);
 };
 
 //  <---  Changed Lines Mapping --->
@@ -143,8 +145,9 @@ public:
 
 //  Change Marker Functions
 void initPlugin();
-void initMarker(int* markerArray );
+bool generateDefaultConfigXml();
 void modificationHandler( SCNotification *scn );
+void bufferActivatedHandler( SCNotification *scn );
 void fileSaveHandler();
 void fileBeforeCloseHandler( SCNotification *scn );
 void wordStylesUpdatedHandler();
@@ -157,8 +160,7 @@ void jumpChangeNext();
 void jumpLineUp();
 void jumpLineDown();
 void displayWithLineNumbers();
-void displayWithBookMarks();
-void displayInPluginMargin();
+void displayWithChangeMarks();
 void displayAsHighlight();
 void disableDoc();
 void disablePlugin();
