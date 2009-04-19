@@ -55,9 +55,7 @@ void Change_Mark::setTargetMarginMenuItem( MARGIN target )
 			}
 			else {
 				//  Since this margin is reserved by N++ we can completely exclude other markers from it.
-				::SendMessage( hMainView(), SCI_SETMARGINMASKN, MARGIN_CHANGES, 0 );
 				::SendMessage( hMainView(), SCI_SETMARGINWIDTHN, MARGIN_CHANGES, 3 );
-				::SendMessage( hSecondView(), SCI_SETMARGINMASKN, MARGIN_CHANGES, 0 );
 				::SendMessage( hSecondView(), SCI_SETMARGINWIDTHN, MARGIN_CHANGES, 3 );
 			}
 			cmdID = getCmdId( CMD_CHANGEMARK );
@@ -634,6 +632,8 @@ int ChangedDocument::getNextChangeLine(bool direction)
 void initPlugin()
 {
 	int _margin = mark::string2margin( xml::getGUIConfigValue( TEXT("SciMarkers"), TEXT("margin") ) );
+	::SendMessage( hMainView(), SCI_SETMARGINTYPEN, MARGIN_CHANGES, SC_MARGIN_BACK );
+	::SendMessage( hSecondView(), SCI_SETMARGINTYPEN, MARGIN_CHANGES, SC_MARGIN_BACK );
 
 	//  Marker Specific Settings
 	for ( int i = 0; i < NB_CHANGEMARKERS; i++ ) {
@@ -662,10 +662,6 @@ void initPlugin()
 
 		// Initialize the marker
 		cm[i]->init( CM_BASEID + i);
-		if ( _margin == MARGIN_CHANGES ) {
-			::SendMessage( hMainView(), SCI_SETMARGINMASKN, MARGIN_CHANGES, 1 << cm[i]->id );
-			::SendMessage( hSecondView(), SCI_SETMARGINMASKN, MARGIN_CHANGES, 1 << cm[i]->id );
-		}
 		cm[i]->margin.setTarget( MARGIN( _margin ), cm[i]->id );
 		cm[i]->setTargetMarginMenuItem( cm[i]->margin.getTarget() );
 	}
@@ -837,6 +833,8 @@ void wordStylesUpdatedHandler()
 		Change_Mark* currCM = cm[i];
 		if (! ( currCM->fore == newCM->fore && currCM->back == newCM->back ) ) {
 			cm[i]->back = newCM->back;
+			//  Force a recalculation of the alpha value for the marker.
+			cm[i]->alpha = -1;
 			cm[i]->init( cm[i]->id );
 		}
 	}
