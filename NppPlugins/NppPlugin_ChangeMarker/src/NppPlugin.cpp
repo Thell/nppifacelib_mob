@@ -56,6 +56,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD reasonForCall, LPVOID /*lpReserved*/
 		setPluginFuncItem(TEXT("Jump: Next Change"), p_cm::jumpChangeNext,p_cm::CMD_JUMPCHANGENEXT);
 		setPluginFuncItem(TEXT("Jump: Changed Line Up"), p_cm::jumpLineUp,p_cm::CMD_JUMPLINEUP);
 		setPluginFuncItem(TEXT("Jump: Changed Line Down"), p_cm::jumpLineDown,p_cm::CMD_JUMPLINEDOWN);
+		setPluginFuncItem(TEXT("Include Saved Changes in Jump Line Up/Down"), p_cm::jumpIncludeSaved,p_cm::CMD_JUMPINCLUDESAVED);
 		setPluginFuncItem(TEXT(""), NULL);	//  A separator line.
 		setPluginFuncItem(TEXT("Display: Line Number Margin"), p_cm::displayWithLineNumbers, p_cm::CMD_LINENUMBER , true);
 		setPluginFuncItem(TEXT("Display: Change Mark Margin"), p_cm::displayWithChangeMarks, p_cm::CMD_CHANGEMARK, true);
@@ -183,12 +184,12 @@ void npp_plugin::About_func()
 		TEXT("  since it was last loaded, and since it was last saved.\r\n\r\n")
 		TEXT("  You can view lines with un-saved changes using the Jump menu commands.\n" )
 		TEXT("  Use Jump: Prev Change and Next Change to move through the changes in the order they were made.\n")
-		TEXT("  Use Jump: Changed Line Up and Down to move to the first un-saved change found in the direction chosen.\r\n\r\n")
+		TEXT("  Use Jump: Changed Line Up and Down to move to the first change found in the direction chosen.\r\n\r\n")
 		TEXT("  Disabling change tracking for a document will clear all markers and reset the change tracker.  This\n")
 		TEXT("  can be used to clear old change marks, and keep your undo history, and not need to reload the document.\n") 
 		TEXT("  Disabling the whole plugin will stop all change processing.  If you have several large documents and\n")
 		TEXT("  will be doing bulk changes disabling the plugin will help speed up the process.\r\n\r\n")
 		TEXT("  Hopefully you find this to be a useful tool.  Enjoy!\r\n")
 		TEXT("  Thell Fowler (almostautomated)"),
-		TEXT("Change Markers 1.1.0"), MB_OK);
+		TEXT("Change Markers 1.2.0"), MB_OK);
 }

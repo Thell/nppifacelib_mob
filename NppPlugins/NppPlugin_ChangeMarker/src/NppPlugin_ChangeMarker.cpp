@@ -29,6 +29,7 @@ namespace mark = npp_plugin::markers;
 
 //  Namespace public static variables.
 bool _doDisable = false;
+bool _jumpIncludesSaved = false;
 Change_Mark* cm[NB_CHANGEMARKERS];
 typedef std::set<int> ChangedDocs_Set;
 ChangedDocs_Set _doc_set;
@@ -666,6 +667,13 @@ void initPlugin()
 		cm[i]->setTargetMarginMenuItem( cm[i]->margin.getTarget() );
 	}
 
+	//  Setup the jumping control option value, using reverse logic, then call the menu command
+	//  which will toggle the value.
+	if ( xml::getGUIConfigValue( TEXT("JumpControl"), TEXT("includeSaved") ) == TEXT("false") ) {
+		_jumpIncludesSaved = true;
+	}
+	jumpIncludeSaved();
+
 	//  Now that all the config values are set...
 	if (! ( xml::getGUIConfigValue( TEXT("SciMarkers"), TEXT("trackUNDOREDO") ) == TEXT("true") ) ) {
 		npp_plugin_changemarker::disablePlugin();
@@ -730,6 +738,11 @@ bool generateDefaultConfigXml()
 	element_guiConfig->SetAttribute( TEXT("margin"), TEXT("MARGIN_CHANGES") );
 	node_guiConfig->LinkEndChild( element_guiConfig );
 
+	TiXmlElement * element_guiConfig2 = new TiXmlElement( TEXT("GUIConfig") );
+	element_guiConfig2->SetAttribute( TEXT("name"), TEXT("JumpControl") );
+	element_guiConfig2->SetAttribute( TEXT("includeSaved"), TEXT("false") );
+	node_guiConfig->LinkEndChild( element_guiConfig2 );
+
 	tstring baseModuleName = npp_plugin::getModuleBaseName()->c_str();
 	TCHAR targetPath[MAX_PATH];
 	::SendMessage( hNpp(), NPPM_GETPLUGINSCONFIGDIR, MAX_PATH, (LPARAM)targetPath );
@@ -778,6 +791,7 @@ void jumpChangedLines( bool direction )
 	int nextLine;
 	int sci_marker_direction;
 	int sci_search_mask = ( 1 << cm[CM_NOTSAVED]->id );
+	if ( _jumpIncludesSaved ) sci_search_mask |= ( 1 << cm[CM_SAVED]->id );
 
 	if ( direction ) {
 		currLine = ( lineStart < lineMax ) ? ( lineStart + 1 ) : ( 0 );
@@ -796,7 +810,7 @@ void jumpChangedLines( bool direction )
 	}
 
 	if ( nextLine < 0 ) {
-		::MessageBox( hCurrView(), TEXT("No un-saved changes found!" ), TEXT("Jump to Changed Line"), MB_OK );
+		::MessageBox( hCurrView(), TEXT("No changes found to jump to!" ), TEXT("Jump to Changed Line"), MB_OK );
 		return;
 	}
 
@@ -997,6 +1011,17 @@ void jumpLineUp() {	jumpChangedLines( false ); }
 
 //  Movement Control function.
 void jumpLineDown() { jumpChangedLines( true ); }
+
+//  Move Control Option function.
+void jumpIncludeSaved() {
+	_jumpIncludesSaved = !_jumpIncludesSaved;
+
+	int cmdID = getCmdId( CMD_JUMPINCLUDESAVED );
+	::SendMessage(npp_plugin::hNpp(), NPPM_SETMENUITEMCHECK, cmdID, _jumpIncludesSaved );
+
+	xml::setGUIConfigValue( TEXT("JumpControl"), TEXT("includeSaved"),
+		_jumpIncludesSaved?TEXT("true"):TEXT("false") );
+}
 
 //  Global display margin control
 void displayWithLineNumbers()

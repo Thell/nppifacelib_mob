@@ -35,6 +35,7 @@ enum MENU_COMMANDS {
 	CMD_JUMPCHANGENEXT,
 	CMD_JUMPLINEUP,
 	CMD_JUMPLINEDOWN,
+	CMD_JUMPINCLUDESAVED,
 	CMD_LINENUMBER,
 	CMD_CHANGEMARK,
 	CMD_HIGHLIGHT,
@@ -159,6 +160,7 @@ void jumpChangePrev();
 void jumpChangeNext();
 void jumpLineUp();
 void jumpLineDown();
+void jumpIncludeSaved();
 void displayWithLineNumbers();
 void displayWithChangeMarks();
 void displayAsHighlight();
