@@ -44,7 +44,6 @@ namespace npp_plugin {
 namespace markers {
 
 const int NB_MAX_PLUGINMARKERS = 16;
-const int SC_MARK_AVAILABLE = 28;
 
 //  N++ Margins
 enum MARGIN {
