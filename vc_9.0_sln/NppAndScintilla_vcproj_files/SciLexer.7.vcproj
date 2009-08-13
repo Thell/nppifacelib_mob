@@ -241,6 +241,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\src\PerLine.cxx"
+				>
+			</File>
+			<File
 				RelativePath="..\src\PositionCache.cxx"
 				>
 			</File>
@@ -360,6 +364,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\src\LexCOBOL.cxx"
+					>
+				</File>
+				<File
 					RelativePath="..\src\LexConf.cxx"
 					>
 				</File>
@@ -468,6 +476,14 @@
 					>
 				</File>
 				<File
+					RelativePath="..\src\LexMySQL.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\src\LexNimrod.cxx"
+					>
+				</File>
+				<File
 					RelativePath="..\src\LexNsis.cxx"
 					>
 				</File>
@@ -501,6 +517,10 @@
 				</File>
 				<File
 					RelativePath="..\src\LexPOV.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\src\LexPowerPro.cxx"
 					>
 				</File>
 				<File
@@ -544,6 +564,14 @@
 					>
 				</File>
 				<File
+					RelativePath="..\src\LexSML.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\src\LexSorcus.cxx"
+					>
+				</File>
+				<File
 					RelativePath="..\src\LexSpecman.cxx"
 					>
 				</File>
@@ -556,7 +584,15 @@
 					>
 				</File>
 				<File
+					RelativePath="..\src\LexTACL.cxx"
+					>
+				</File>
+				<File
 					RelativePath="..\src\LexTADS3.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\src\LexTAL.cxx"
 					>
 				</File>
 				<File
@@ -652,6 +688,10 @@
 			</File>
 			<File
 				RelativePath="..\src\Partitioning.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\PerLine.h"
 				>
 			</File>
 			<File
